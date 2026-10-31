@@ -1,0 +1,6 @@
+{
+  "name": "BioSense Log",
+  "description": "Measure and log fingertip blood flow using camera/flash and chest vibrations using the accelerometer, with dual-language French & English support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

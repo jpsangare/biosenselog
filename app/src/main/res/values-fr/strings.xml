@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Log BioSense</string>
+    <string name="title_blood_flow">Flux Sanguin (PPG)</string>
+    <string name="title_chest_vibe">Vibrations de la Poitrine</string>
+    <string name="measurement_history">Historique Biométrique</string>
+    <string name="lbl_simulator">Simulateur Actif</string>
+    <string name="lbl_hardware">Capteur Réel</string>
+    
+    <string name="btn_start">Démarrer la Mesure</string>
+    <string name="btn_stop">Arrêter</string>
+    <string name="btn_save">Enregistrer</string>
+    <string name="btn_clear_history">Vider l\'historique</string>
+    
+    <string name="label_pulse">Pouls : %d BPM</string>
+    <string name="label_amplitude">Amplitude : %.1f%%</string>
+    <string name="label_vibration">Vibration : %.3f m/s²</string>
+    
+    <string name="guide_finger_ppg">Placez le bout de votre index fermement sur la caméra arrière et recouvrez le flash.</string>
+    <string name="guide_vibe">Allongez-vous et placez le téléphone bien à plat sur le centre de votre poitrine.</string>
+    <string name="finger_not_detected">Doigt non détecté. Veuillez couvrir la caméra et le flash.</string>
+    <string name="finger_detected">Doigt détecté ! Analyse du flux sanguin en cours...</string>
+    
+    <string name="camera_permission_denied">L\'autorisation de l\'appareil photo est requise pour utiliser le capteur de flux sanguin.</string>
+    <string name="btn_request_permission">Autoriser l\'appareil photo</string>
+    
+    <string name="status_low">Faible</string>
+    <string name="status_normal">Normal</string>
+    <string name="status_high">Élevé</string>
+    
+    <string name="limit_pulse">Pouls (Limites normales : 60 - 100 BPM)</string>
+    <string name="limit_vibration">Vibration (Limites normales : 0,050 - 0,250 m/s²)</string>
+    <string name="limit_volume" formatted="false">Volume du flux (Limites normales : 1,0% - 4,5%)</string>
+    
+    <string name="empty_history">Aucune mesure enregistrée dans la base de données.</string>
+    <string name="toast_saved">Mesure enregistrée avec succès !</string>
+    <string name="info_countdown">Calibrage... %d secondes restantes</string>
+    
+    <string name="tab_ppg">Flux Sanguin (PPG)</string>
+    <string name="tab_vibe">Vibration Chest (SCG)</string>
+    <string name="unit_bpm">BPM</string>
+
+    <string name="abnormal_test">Simuler des valeurs anormales</string>
+    <string name="normal_test">Revenir aux valeurs normales</string>
+</resources>

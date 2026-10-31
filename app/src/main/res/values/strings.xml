@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BioSense Log</string>
+    <string name="title_blood_flow">Blood Flow (PPG)</string>
+    <string name="title_chest_vibe">Chest Vibration</string>
+    <string name="measurement_history">Biometric History</string>
+    <string name="lbl_simulator">Simulator Mode</string>
+    <string name="lbl_hardware">Real Sensor</string>
+    
+    <string name="btn_start">Start Measurement</string>
+    <string name="btn_stop">Stop</string>
+    <string name="btn_save">Save Raw</string>
+    <string name="btn_clear_history">Clear History</string>
+    
+    <string name="label_pulse">Pulse: %d BPM</string>
+    <string name="label_amplitude">Amplitude: %.1f%%</string>
+    <string name="label_vibration">Vibration: %.3f m/s²</string>
+    
+    <string name="guide_finger_ppg">Place your index fingertip flat over the rear camera lens and cover the flash.</string>
+    <string name="guide_vibe">Lie down and place the phone flat on the center of your chest.</string>
+    <string name="finger_not_detected">Finger not detected. Please cover camera lens and flash completely.</string>
+    <string name="finger_detected">Finger detected! Analyzing blood flow pulse...</string>
+    <string name="finger_status_too_dark">Too dark. Ensure flash is on and finger covers camera.</string>
+    <string name="finger_status_too_bright">Too bright. Press finger firmly over camera lens.</string>
+    <string name="finger_status_adjust">Cover rear camera lens and flash completely with fingertip.</string>
+    <string name="test_simulate_finger">Simulate Finger Touch (Test)</string>
+    
+    <string name="camera_permission_denied">Camera permission is required to use the optical blood flow sensor.</string>
+    <string name="btn_request_permission">Grant Camera Permission</string>
+    
+    <string name="status_low">Low</string>
+    <string name="status_normal">Normal</string>
+    <string name="status_high">High</string>
+    
+    <string name="limit_pulse">Pulse (Normal limits: 60 - 100 BPM)</string>
+    <string name="limit_vibration">Vibration (Normal limits: 0.050 - 0.250 m/s²)</string>
+    <string name="limit_volume" formatted="false">Perfusion Index (Normal limits: 1.0% - 4.5%)</string>
+    
+    <string name="empty_history">No measurements logged in database yet.</string>
+    <string name="toast_saved">Biometrics logged successfully!</string>
+    <string name="info_countdown">Calibrating... %d seconds left</string>
+    
+    <string name="tab_ppg">Blood Flow (PPG)</string>
+    <string name="tab_vibe">Chest Vibration (SCG)</string>
+    <string name="unit_bpm">BPM</string>
+
+    <string name="abnormal_test">Simulate Abnormal Values</string>
+    <string name="normal_test">Reset to Normal Values</string>
+</resources>
