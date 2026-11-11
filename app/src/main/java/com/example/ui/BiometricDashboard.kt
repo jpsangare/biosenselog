@@ -2,11 +2,18 @@ package com.example.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.widget.Toast
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview as CameraPreview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.material.icons.automirrored.rounded.ExitToApp
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
@@ -21,11 +28,15 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.Analytics
@@ -51,10 +62,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -98,8 +111,40 @@ fun BiometricDashboard(
     val isSimulatedFingerTouch by viewModel.isSimulatedFingerTouch.collectAsStateWithLifecycle()
     val recentRecords by viewModel.recentRecords.collectAsStateWithLifecycle()
 
+    var showPlacementTips by remember { mutableStateOf(true) }
+    var showExitConfirmDialog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    var exportFormatCsv by remember { mutableStateOf(true) }
+    var activeCamera by remember { mutableStateOf<Camera?>(null) }
+    var cameraProviderRef by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Turn off camera torch and release camera when in simulation mode or on another tab
+    LaunchedEffect(isSimulatorEnabled, currentTab) {
+        if (isSimulatorEnabled || currentTab != "PPG") {
+            try {
+                activeCamera?.cameraControl?.enableTorch(false)
+                cameraProviderRef?.unbindAll()
+                activeCamera = null
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        onDispose {
+            try {
+                activeCamera?.cameraControl?.enableTorch(false)
+                cameraProviderRef?.unbindAll()
+                activeCamera = null
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     // Set up camera permission state
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
@@ -154,6 +199,24 @@ fun BiometricDashboard(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Close App button
+                        FilledTonalIconButton(
+                            onClick = { showExitConfirmDialog = true },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .testTag("close_app_btn"),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f),
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ExitToApp,
+                                contentDescription = stringResource(R.string.btn_close_app),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
 
@@ -293,8 +356,8 @@ fun BiometricDashboard(
                             )
                         }
 
-                        // Interactive tests inside Simulator Mode
-                        if (isSimulatorEnabled) {
+                        // Interactive tests inside Simulator or Touch Simulation Mode
+                        if (isSimulatorEnabled || isSimulatedFingerTouch) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -613,7 +676,11 @@ fun BiometricDashboard(
 
                                                     cameraProviderFuture.addListener({
                                                         try {
+                                                            if (isSimulatorEnabled || currentTab != "PPG") {
+                                                                return@addListener
+                                                            }
                                                             val cameraProvider = cameraProviderFuture.get()
+                                                            cameraProviderRef = cameraProvider
                                                             val preview = CameraPreview.Builder().build().also {
                                                                 it.setSurfaceProvider(previewView.surfaceProvider)
                                                             }
@@ -633,7 +700,8 @@ fun BiometricDashboard(
                                                                 preview,
                                                                 imageAnalysis
                                                             )
-                                                            if (cameraInstance.cameraInfo.hasFlashUnit()) {
+                                                            activeCamera = cameraInstance
+                                                            if (!isSimulatorEnabled && cameraInstance.cameraInfo.hasFlashUnit()) {
                                                                 cameraInstance.cameraControl.enableTorch(true)
                                                             }
                                                         } catch (e: Exception) {
@@ -642,6 +710,15 @@ fun BiometricDashboard(
                                                     }, ctx.mainExecutor)
 
                                                     previewView
+                                                },
+                                                onRelease = {
+                                                    try {
+                                                        activeCamera?.cameraControl?.enableTorch(false)
+                                                        cameraProviderRef?.unbindAll()
+                                                        activeCamera = null
+                                                    } catch (e: Exception) {
+                                                        e.printStackTrace()
+                                                    }
                                                 },
                                                 modifier = Modifier.fillMaxSize()
                                             )
@@ -679,6 +756,94 @@ fun BiometricDashboard(
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.SemiBold
                                                 )
+                                            }
+
+                                            if (isSimulatedFingerTouch) {
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    FilterChip(
+                                                        selected = liveBPM in 60..85,
+                                                        onClick = { viewModel.triggerAbnormalSimulate(false) },
+                                                        label = { Text("72 BPM", style = MaterialTheme.typography.labelSmall) },
+                                                        modifier = Modifier.testTag("chip_72_bpm")
+                                                    )
+                                                    FilterChip(
+                                                        selected = liveBPM > 90,
+                                                        onClick = { viewModel.triggerAbnormalSimulate(true) },
+                                                        label = { Text("115 BPM", style = MaterialTheme.typography.labelSmall) },
+                                                        modifier = Modifier.testTag("chip_115_bpm")
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(14.dp))
+
+                                    // Clear, expandable step-by-step placement tips
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                        ),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(14.dp)) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable { showPlacementTips = !showPlacementTips },
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Info,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = stringResource(R.string.tip_title_finger_placement),
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                Text(
+                                                    text = if (showPlacementTips) "▲" else "▼",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+
+                                            AnimatedVisibility(visible = showPlacementTips) {
+                                                Column(
+                                                    modifier = Modifier.padding(top = 10.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = stringResource(R.string.tip_camera_choice),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = stringResource(R.string.tip_flash_coverage),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = stringResource(R.string.tip_gentle_pressure),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = stringResource(R.string.tip_keep_still),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -995,15 +1160,42 @@ fun BiometricDashboard(
                     }
 
                     if (recentRecords.isNotEmpty()) {
-                        IconButton(
-                            onClick = { viewModel.clearLogHistory() },
-                            modifier = Modifier.testTag("clear_history_btn")
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = stringResource(R.string.btn_clear_history),
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                            FilledTonalButton(
+                                onClick = { showExportDialog = true },
+                                modifier = Modifier.testTag("export_history_btn"),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Share,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.btn_export),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { viewModel.clearLogHistory() },
+                                modifier = Modifier.testTag("clear_history_btn")
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = stringResource(R.string.btn_clear_history),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }
@@ -1051,6 +1243,206 @@ fun BiometricDashboard(
                 }
             }
         }
+    }
+
+    if (showExitConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ExitToApp,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.dialog_close_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(text = stringResource(R.string.dialog_close_message))
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExitConfirmDialog = false
+                        try {
+                            activeCamera?.cameraControl?.enableTorch(false)
+                            cameraProviderRef?.unbindAll()
+                            activeCamera = null
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                        val activity = context as? Activity
+                        activity?.finishAffinity() ?: activity?.finish()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.testTag("confirm_exit_btn")
+                ) {
+                    Text(text = stringResource(R.string.dialog_confirm_exit))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showExitConfirmDialog = false },
+                    modifier = Modifier.testTag("cancel_exit_btn")
+                ) {
+                    Text(text = stringResource(R.string.dialog_cancel))
+                }
+            }
+        )
+    }
+
+    if (showExportDialog) {
+        val clipboardManager = LocalClipboardManager.current
+        val exportText = remember(exportFormatCsv, recentRecords) {
+            if (exportFormatCsv) viewModel.generateCsvExport(recentRecords)
+            else viewModel.generateReportExport(recentRecords)
+        }
+
+        AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Share,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.dialog_export_title),
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Format selector tabs / chips
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        FilterChip(
+                            selected = exportFormatCsv,
+                            onClick = { exportFormatCsv = true },
+                            label = {
+                                Text(
+                                    stringResource(R.string.export_format_csv),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (exportFormatCsv) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = !exportFormatCsv,
+                            onClick = { exportFormatCsv = false },
+                            label = {
+                                Text(
+                                    stringResource(R.string.export_format_report),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (!exportFormatCsv) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // Preview Box
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 240.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        SelectionContainer {
+                            val scrollState = rememberScrollState()
+                            val horizScroll = rememberScrollState()
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(scrollState)
+                                    .horizontalScroll(horizScroll)
+                                    .padding(12.dp)
+                            ) {
+                                Text(
+                                    text = exportText,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = "${recentRecords.size} mesures • BioSense Log",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.export_chooser_title))
+                            putExtra(Intent.EXTRA_TEXT, exportText)
+                        }
+                        val chooser = Intent.createChooser(shareIntent, context.getString(R.string.export_chooser_title))
+                        context.startActivity(chooser)
+                    },
+                    modifier = Modifier.testTag("share_export_btn")
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Share,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = stringResource(R.string.btn_share_export))
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            clipboardManager.setText(AnnotatedString(exportText))
+                            Toast.makeText(context, context.getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.testTag("copy_export_btn")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.ContentCopy,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(R.string.btn_copy_export))
+                    }
+
+                    TextButton(
+                        onClick = { showExportDialog = false },
+                        modifier = Modifier.testTag("close_export_dialog_btn")
+                    ) {
+                        Text(text = stringResource(R.string.dialog_cancel))
+                    }
+                }
+            }
+        )
     }
 }
 

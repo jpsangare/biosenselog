@@ -16,10 +16,14 @@
     <string name="label_amplitude">Amplitude : %.1f%%</string>
     <string name="label_vibration">Vibration : %.3f m/s²</string>
     
-    <string name="guide_finger_ppg">Placez le bout de votre index fermement sur la caméra arrière et recouvrez le flash.</string>
+    <string name="guide_finger_ppg">Posez délicatement la pulpe de l\'index sur l\'objectif de la caméra principale en recouvrant le flash. N\'appuyez pas trop fort.</string>
     <string name="guide_vibe">Allongez-vous et placez le téléphone bien à plat sur le centre de votre poitrine.</string>
-    <string name="finger_not_detected">Doigt non détecté. Veuillez couvrir la caméra et le flash.</string>
+    <string name="finger_not_detected">Doigt non détecté. Couvrez l\'objectif de la caméra et le flash.</string>
     <string name="finger_detected">Doigt détecté ! Analyse du flux sanguin en cours...</string>
+    <string name="finger_status_too_dark">Trop sombre. Vérifiez que le flash est allumé et couvre la caméra.</string>
+    <string name="finger_status_too_bright">Trop lumineux. Couvrez bien l\'objectif avec la pulpe du doigt.</string>
+    <string name="finger_status_adjust">Ajustez le doigt pour couvrir l\'objectif et le flash sans forcer.</string>
+    <string name="test_simulate_finger">Simuler le contact (Test)</string>
     
     <string name="camera_permission_denied">L\'autorisation de l\'appareil photo est requise pour utiliser le capteur de flux sanguin.</string>
     <string name="btn_request_permission">Autoriser l\'appareil photo</string>
@@ -42,4 +46,25 @@
 
     <string name="abnormal_test">Simuler des valeurs anormales</string>
     <string name="normal_test">Revenir aux valeurs normales</string>
+
+    <string name="tip_title_finger_placement">Comment placer le doigt ?</string>
+    <string name="tip_camera_choice">1. Première caméra : Couvrez l\'objectif de la caméra arrière principale (généralement la lentille supérieure).</string>
+    <string name="tip_flash_coverage">2. Flash LED : Le flash doit éclairer la pulpe du doigt pour faire briller les capillaires en rouge.</string>
+    <string name="tip_gentle_pressure">3. Pression légère : Posez le doigt délicatement. Appuyer trop fort coupe la circulation sanguine capillaire.</string>
+    <string name="tip_keep_still">4. Immobilité : Gardez le doigt bien immobile pendant les 10 secondes de mesure.</string>
+
+    <string name="btn_close_app">Fermer l\'appli</string>
+    <string name="dialog_close_title">Quitter l\'application ?</string>
+    <string name="dialog_close_message">Êtes-vous sûr de vouloir fermer l\'application BioSense Log ?</string>
+    <string name="dialog_cancel">Annuler</string>
+    <string name="dialog_confirm_exit">Fermer</string>
+
+    <string name="btn_export">Exporter</string>
+    <string name="dialog_export_title">Exporter les mesures</string>
+    <string name="export_format_csv">CSV (Tableur)</string>
+    <string name="export_format_report">Rapport de synthèse</string>
+    <string name="btn_share_export">Partager</string>
+    <string name="btn_copy_export">Copier</string>
+    <string name="toast_copied">Copié dans le presse-papier !</string>
+    <string name="export_chooser_title">Exporter les données BioSense</string>
 </resources>

@@ -46,4 +46,25 @@
 
     <string name="abnormal_test">Simulate Abnormal Values</string>
     <string name="normal_test">Reset to Normal Values</string>
+
+    <string name="tip_title_finger_placement">How to place your finger?</string>
+    <string name="tip_camera_choice">1. Main Camera: Cover the primary rear camera lens (usually the top lens).</string>
+    <string name="tip_flash_coverage">2. LED Flash: Light up fingertip tissue so capillary blood glows translucent red.</string>
+    <string name="tip_gentle_pressure">3. Gentle Touch: Rest finger lightly. Pressing too hard cuts off capillary blood flow.</string>
+    <string name="tip_keep_still">4. Keep Still: Hold finger steady throughout the 10-second measurement.</string>
+
+    <string name="btn_close_app">Close App</string>
+    <string name="dialog_close_title">Close Application?</string>
+    <string name="dialog_close_message">Are you sure you want to exit BioSense Log?</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_confirm_exit">Exit</string>
+
+    <string name="btn_export">Export</string>
+    <string name="dialog_export_title">Export Measurements</string>
+    <string name="export_format_csv">CSV (Spreadsheet)</string>
+    <string name="export_format_report">Summary Report</string>
+    <string name="btn_share_export">Share</string>
+    <string name="btn_copy_export">Copy</string>
+    <string name="toast_copied">Copied to clipboard!</string>
+    <string name="export_chooser_title">Export BioSense Data</string>
 </resources>

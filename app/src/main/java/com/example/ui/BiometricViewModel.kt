@@ -20,6 +20,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.sqrt
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class BiometricViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -90,12 +93,12 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
     // Peak detection helpers for live camera
     private val ppgValueHistory = mutableListOf<Double>() // Continuous double precision
     private val ppgTimestampHistory = mutableListOf<Long>()
-    private val maxPPGHistorySize = 150 // Approx 5 seconds at 30 fps
+    private val maxPPGHistorySize = 90 // Approx 3 seconds at 30 fps for responsive tracking
 
     private val bpmLock = Any()
-    private val bpmRollingHistory = mutableListOf<Int>()
-    private val volumeRollingHistory = mutableListOf<Double>()
-    private val maxRollingHistorySize = 10
+    private var displayedBpmFloat = 72.0
+    private var displayedVolumeFloat = 2.4
+    private var simulatedTargetBpm = 72.0
 
     init {
         // Start simulation by default so the preview or streaming emulator immediately displays active waveforms
@@ -129,10 +132,10 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
                 var simTime = 0.0
                 while (_isSimulatedFingerTouch.value && !_isSimulatorEnabled.value) {
                     simTime += 0.033 // ~30 fps
-                    val f = 72.0 / 60.0 // 72 BPM
-                    val pulse = 140.0 + 8.0 * sin(2.0 * Math.PI * f * simTime) +
-                            3.0 * sin(4.0 * Math.PI * f * simTime + 0.8) +
-                            (Math.random() - 0.5) * 0.4
+                    val f = simulatedTargetBpm / 60.0
+                    val pulse = 140.0 + 12.0 * sin(2.0 * Math.PI * f * simTime) +
+                            3.5 * sin(4.0 * Math.PI * f * simTime + 0.8) +
+                            (Math.random() - 0.5) * 0.2
                     onCameraFrameUpdated(pulse, true, FingerDetectionStatus.DETECTED)
                     delay(33)
                 }
@@ -149,18 +152,26 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Toggle simulation details or change parameters to simulate abnormal values if needed
     fun triggerAbnormalSimulate(abnormal: Boolean) {
+        val targetBpm = if (abnormal) 115 else 72
+        val targetVolume = if (abnormal) 5.2 else 2.4
+        val targetVibe = if (abnormal) 0.45 else 0.12
+
+        simulatedTargetBpm = targetBpm.toDouble()
+
         if (_isSimulatorEnabled.value) {
-            if (abnormal) {
-                // High values for alert testing
-                _liveBPM.value = 115
-                _liveBloodVolume.value = 5.2
-                _liveVibeRMS.value = 0.45
-            } else {
-                // Reset to standard normal values
-                _liveBPM.value = 72
-                _liveBloodVolume.value = 2.4
-                _liveVibeRMS.value = 0.12
-            }
+            _liveBPM.value = targetBpm
+            _liveBloodVolume.value = targetVolume
+            _liveVibeRMS.value = targetVibe
+            displayedBpmFloat = targetBpm.toDouble()
+            displayedVolumeFloat = targetVolume
+        } else if (_isSimulatedFingerTouch.value) {
+            // Instant response in simulated hardware touch mode
+            displayedBpmFloat = targetBpm.toDouble()
+            displayedVolumeFloat = targetVolume
+            _liveBPM.value = targetBpm
+            _liveBloodVolume.value = targetVolume
+            ppgValueHistory.clear()
+            ppgTimestampHistory.clear()
         }
     }
 
@@ -278,8 +289,8 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
             val rawAc = ppgValueHistory.map { (it - baseline).toFloat() }
             _ppgWaveform.value = smoothSignal(rawAc)
 
-            // Calculate heart rate as soon as sufficient historical data (~35 frames, 1.2 seconds) is captured
-            if (ppgValueHistory.size >= 35) {
+            // Calculate heart rate as soon as sufficient historical data (~25 frames, ~0.8s) is captured
+            if (ppgValueHistory.size >= 25) {
                 calculateBpmFromHistory()
             }
         } else {
@@ -290,12 +301,10 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
                 _liveBPM.value = 0
                 _liveBloodVolume.value = 0.0
                 _ppgWaveform.value = emptyList()
+                displayedBpmFloat = 0.0
+                displayedVolumeFloat = 0.0
                 ppgValueHistory.clear()
                 ppgTimestampHistory.clear()
-                synchronized(bpmLock) {
-                    bpmRollingHistory.clear()
-                    volumeRollingHistory.clear()
-                }
             }
         }
     }
@@ -316,10 +325,10 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
     private fun calculateBpmFromHistory() {
         val y = ppgValueHistory.toList()
         val t = ppgTimestampHistory.toList()
-        if (y.size < 10) return
+        if (y.size < 12) return
 
-        // Moving baseline subtraction (detrending) to eliminate slow respiratory drift
-        val windowSize = minOf(20, y.size / 2)
+        // 1. Moving baseline subtraction (detrending) to eliminate slow respiratory drift
+        val windowSize = minOf(16, y.size / 2)
         val detrended = mutableListOf<Double>()
         for (i in y.indices) {
             val start = maxOf(0, i - windowSize / 2)
@@ -330,14 +339,13 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
             detrended.add(y[i] - localBase)
         }
 
-        // Low-pass smoothing on detrended signal to filter sensor high-frequency noise
+        // 2. 3-point binomial smoothing [0.25, 0.5, 0.25] to filter out sensor high-frequency noise
         val smoothed = mutableListOf<Double>()
         for (i in detrended.indices) {
-            val start = maxOf(0, i - 2)
-            val end = minOf(detrended.size - 1, i + 2)
-            var sum = 0.0
-            for (j in start..end) sum += detrended[j]
-            smoothed.add(sum / (end - start + 1))
+            val prev = if (i > 0) detrended[i - 1] else detrended[i]
+            val curr = detrended[i]
+            val next = if (i < detrended.size - 1) detrended[i + 1] else detrended[i]
+            smoothed.add(0.25 * prev + 0.50 * curr + 0.25 * next)
         }
 
         val maxL = smoothed.maxOrNull() ?: 0.0
@@ -345,8 +353,10 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
         val peakToPeak = maxL - minL
 
         // Only search for peaks if signal has real physiological pulse variation
-        if (peakToPeak >= 0.25) {
-            val peakThreshold = maxL * 0.30 // Upper 70% portion of zero-centered wave
+        if (peakToPeak >= 0.35) {
+            // Systolic peak threshold: 50% of peak height
+            // This strictly rejects the secondary dicrotic wave (typically 30-40% height)
+            val peakThreshold = maxOf(0.20, maxL * 0.50)
             val rawPeaks = mutableListOf<Int>()
             for (i in 2 until smoothed.size - 2) {
                 val center = smoothed[i]
@@ -358,58 +368,81 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
                 }
             }
 
-            // Chronologically prune peaks that occur too closely (under 320 ms refractory period, max ~185 BPM)
-            val prunedPeaks = mutableListOf<Int>()
+            // 3. Sub-frame parabolic interpolation for exact peak timestamps
+            val peakExactTimestamps = mutableListOf<Double>()
             for (pIdx in rawPeaks) {
-                if (prunedPeaks.isEmpty()) {
-                    prunedPeaks.add(pIdx)
+                val y1 = smoothed[pIdx - 1]
+                val y2 = smoothed[pIdx]
+                val y3 = smoothed[pIdx + 1]
+                val denom = 2.0 * (y1 - 2.0 * y2 + y3)
+                val delta = if (denom != 0.0) ((y1 - y3) / denom).coerceIn(-0.5, 0.5) else 0.0
+                val dt = if (pIdx > 0) (t[pIdx] - t[pIdx - 1]).toDouble() else 33.3
+                val exactTime = t[pIdx].toDouble() + delta * dt
+
+                if (peakExactTimestamps.isEmpty()) {
+                    peakExactTimestamps.add(exactTime)
                 } else {
-                    val lastPIdx = prunedPeaks.last()
-                    val gapMs = t[pIdx] - t[lastPIdx]
-                    if (gapMs >= 320) {
-                        prunedPeaks.add(pIdx)
+                    val lastTime = peakExactTimestamps.last()
+                    val gap = exactTime - lastTime
+                    // Minimum refractory period 360ms (max ~166 BPM) to block any dicrotic notch
+                    if (gap >= 360.0) {
+                        peakExactTimestamps.add(exactTime)
                     }
                 }
             }
 
-            // Measure time gap between consecutive pruned peaks
-            if (prunedPeaks.size >= 2) {
-                val validGaps = mutableListOf<Long>()
-                for (p in 0 until prunedPeaks.size - 1) {
-                    val gapMs = t[prunedPeaks[p + 1]] - t[prunedPeaks[p]]
+            // 4. Extract consecutive beat-to-beat intervals
+            if (peakExactTimestamps.size >= 2) {
+                val intervals = mutableListOf<Double>()
+                for (p in 0 until peakExactTimestamps.size - 1) {
+                    val gap = peakExactTimestamps[p + 1] - peakExactTimestamps[p]
                     // Physiological pulse interval limits: 375ms (160 BPM) to 1350ms (44 BPM)
-                    if (gapMs in 375..1350) {
-                        validGaps.add(gapMs)
+                    if (gap in 375.0..1350.0) {
+                        intervals.add(gap)
                     }
                 }
 
-                if (validGaps.isNotEmpty()) {
-                    val avgGapMs = validGaps.average()
-                    val calculatedBpm = (60000.0 / avgGapMs).toInt()
+                if (intervals.isNotEmpty()) {
+                    // Recency-weighted average of the most recent intervals:
+                    // The latest beat carries up to 50% weight, so changes in pulse rate
+                    // are detected promptly (within 1-2 beats) without sluggish lag!
+                    val recentCount = minOf(4, intervals.size)
+                    val subList = intervals.takeLast(recentCount)
+                    val weights = when (recentCount) {
+                        1 -> listOf(1.0)
+                        2 -> listOf(0.35, 0.65)
+                        3 -> listOf(0.20, 0.30, 0.50)
+                        else -> listOf(0.10, 0.20, 0.30, 0.40)
+                    }
+                    var weightedSum = 0.0
+                    var weightSum = 0.0
+                    for (k in subList.indices) {
+                        weightedSum += subList[k] * weights[k]
+                        weightSum += weights[k]
+                    }
+                    val weightedGap = weightedSum / weightSum
+                    val instantBpm = 60000.0 / weightedGap
 
-                    // Calculate blood flow volume index (relative peak amplitude %)
-                    val meanVal = y.average().coerceAtLeast(1.0)
-                    val rawAmp = (peakToPeak / meanVal) * 100.0
-                    val clampedAmp = rawAmp.coerceIn(0.8, 6.5)
-
-                    if (calculatedBpm in 44..160) {
+                    if (instantBpm in 44.0..160.0) {
                         synchronized(bpmLock) {
-                            bpmRollingHistory.add(calculatedBpm)
-                            if (bpmRollingHistory.size > maxRollingHistorySize) {
-                                bpmRollingHistory.removeAt(0)
+                            // Adaptive display filter:
+                            // Fast response on step changes, silky stability on minor noise
+                            if (_liveBPM.value <= 35) {
+                                displayedBpmFloat = instantBpm
+                                _liveBPM.value = instantBpm.toInt()
+                            } else {
+                                val diff = instantBpm - displayedBpmFloat
+                                val alpha = if (kotlin.math.abs(diff) > 7.0) 0.50 else 0.22
+                                displayedBpmFloat += alpha * diff
+                                _liveBPM.value = kotlin.math.round(displayedBpmFloat).toInt()
                             }
 
-                            volumeRollingHistory.add(clampedAmp)
-                            if (volumeRollingHistory.size > maxRollingHistorySize) {
-                                volumeRollingHistory.removeAt(0)
-                            }
-
-                            // Stable median filter for heart rate
-                            val sortedBpm = bpmRollingHistory.sorted()
-                            _liveBPM.value = sortedBpm[sortedBpm.size / 2]
-
-                            // Stable average filter for blood flow amplitude
-                            _liveBloodVolume.value = volumeRollingHistory.average()
+                            // Smooth perfusion index / volume amplitude
+                            val meanVal = y.average().coerceAtLeast(1.0)
+                            val rawAmp = (peakToPeak / meanVal) * 100.0
+                            val clampedAmp = rawAmp.coerceIn(0.8, 6.0)
+                            displayedVolumeFloat += 0.25 * (clampedAmp - displayedVolumeFloat)
+                            _liveBloodVolume.value = kotlin.math.round(displayedVolumeFloat * 10.0) / 10.0
                         }
                     }
                 }
@@ -508,6 +541,70 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             repository.clearAllRecords()
         }
+    }
+
+    fun generateCsvExport(records: List<BiometricRecord>): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val sb = StringBuilder()
+        sb.append("ID,Timestamp,Date Time,Sensor Type,Value,Unit,Secondary Value,Status,Notes\n")
+        records.forEach { record ->
+            val dateStr = sdf.format(Date(record.timestamp))
+            val isPpg = record.type == "BLOOD_FLOW"
+            val typeLabel = if (isPpg) "Blood Flow (PPG)" else "Chest Vibration (SCG)"
+            val primaryVal = if (isPpg) "${record.value.toInt()}" else String.format(Locale.US, "%.3f", record.value)
+            val unit = if (isPpg) "BPM" else "m/s²"
+            val secondaryVal = if (isPpg) String.format(Locale.US, "%.1f%%", record.secondaryValue) else "N/A"
+            val notesEscaped = record.notes.replace("\"", "\"\"")
+            sb.append("${record.id},${record.timestamp},\"$dateStr\",\"$typeLabel\",$primaryVal,\"$unit\",\"$secondaryVal\",${record.status},\"$notesEscaped\"\n")
+        }
+        return sb.toString()
+    }
+
+    fun generateReportExport(records: List<BiometricRecord>): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val sb = StringBuilder()
+        sb.append("========================================\n")
+        sb.append("     BIOSENSE LOG - RAPPORT BIOMETRIQUE\n")
+        sb.append("========================================\n")
+        sb.append("Date d'export : ${sdf.format(Date())}\n")
+        sb.append("Nombre total de mesures : ${records.size}\n\n")
+
+        val ppgRecords = records.filter { it.type == "BLOOD_FLOW" }
+        if (ppgRecords.isNotEmpty()) {
+            val avgBpm = ppgRecords.map { it.value }.average()
+            val minBpm = ppgRecords.minOf { it.value }
+            val maxBpm = ppgRecords.maxOf { it.value }
+            val avgVolume = ppgRecords.map { it.secondaryValue }.average()
+            sb.append("--- FLUX SANGUIN (PPG) ---\n")
+            sb.append("Mesures : ${ppgRecords.size}\n")
+            sb.append("Pouls moyen : ${avgBpm.toInt()} BPM (Min: ${minBpm.toInt()}, Max: ${maxBpm.toInt()})\n")
+            sb.append(String.format(Locale.getDefault(), "Indice perfusion moyen : %.1f%%\n\n", avgVolume))
+        }
+
+        val vibeRecords = records.filter { it.type != "BLOOD_FLOW" }
+        if (vibeRecords.isNotEmpty()) {
+            val avgVibe = vibeRecords.map { it.value }.average()
+            val minVibe = vibeRecords.minOf { it.value }
+            val maxVibe = vibeRecords.maxOf { it.value }
+            sb.append("--- VIBRATIONS THORACIQUES (SCG) ---\n")
+            sb.append("Mesures : ${vibeRecords.size}\n")
+            sb.append(String.format(Locale.getDefault(), "Vibration RMS moyenne : %.3f m/s² (Min: %.3f, Max: %.3f)\n\n", avgVibe, minVibe, maxVibe))
+        }
+
+        sb.append("--- HISTORIQUE DÉTAILLÉ ---\n")
+        records.forEachIndexed { index, record ->
+            val dateStr = sdf.format(Date(record.timestamp))
+            val isPpg = record.type == "BLOOD_FLOW"
+            if (isPpg) {
+                sb.append(String.format(Locale.getDefault(), "[%d] %s | Pouls: %d BPM (Vol: %.1f%%) | État: %s\n",
+                    index + 1, dateStr, record.value.toInt(), record.secondaryValue, record.status))
+            } else {
+                sb.append(String.format(Locale.getDefault(), "[%d] %s | Vibration: %.3f m/s² | État: %s\n",
+                    index + 1, dateStr, record.value, record.status))
+            }
+        }
+        sb.append("========================================\n")
+        return sb.toString()
     }
 
     override fun onCleared() {

@@ -124,20 +124,16 @@ class PPGAnalyzer(
                 val b = (avgY + 1.772 * (avgU - 128.0)).coerceIn(0.0, 255.0)
 
                 // Detailed finger presence criteria:
-                // 1. Adequate light: flashlight penetrating flesh is neither pitch black nor blown out
-                val isLightAdequate = avgY in 18.0..252.0
+                // 1. Adequate light: flashlight penetrating flesh is neither pitch black nor completely clipped
+                val isLightAdequate = avgY in 15.0..253.0
                 // 2. Translucent flesh spectral signature:
-                // Blood tissue strongly transmits red light and absorbs green/blue.
-                // - V (red chrominance) is high (typically 145-220, neutral is 128)
-                // - U (blue chrominance) is suppressed (typically 75-118, neutral is 128)
-                // - V - U difference is pronounced (typically > 16)
-                // - Or in RGB: R is dominant over G and B
-                val isRedDominant = (avgV >= 136.0 && avgU <= 128.0 && (avgV - avgU >= 14.0)) ||
-                        (r >= 60.0 && r > g * 1.12 && r > b * 1.30)
+                // Capillary tissue strongly transmits red light and absorbs green/blue.
+                val isRedDominant = (avgV >= 134.0 && (avgV - avgU >= 10.0)) ||
+                        (r >= 50.0 && r > g * 1.08 && r > b * 1.20)
 
                 val rawFingerDetected = isLightAdequate && isRedDominant
 
-                // Update debounced confidence counter
+                // Smooth confidence counter
                 if (rawFingerDetected) {
                     if (detectedConfidence < maxConfidence) {
                         detectedConfidence++
@@ -150,20 +146,18 @@ class PPGAnalyzer(
 
                 val isFingerPresent = detectedConfidence >= confidenceThreshold
 
-                // Determine diagnostic status for user guidance
+                // Diagnostic status for user feedback
                 val status = when {
                     isFingerPresent -> FingerDetectionStatus.DETECTED
-                    avgY < 18.0 -> FingerDetectionStatus.TOO_DARK
-                    avgY > 252.0 -> FingerDetectionStatus.TOO_BRIGHT
+                    avgY < 15.0 -> FingerDetectionStatus.TOO_DARK
+                    avgY > 253.0 -> FingerDetectionStatus.TOO_BRIGHT
                     !isRedDominant -> FingerDetectionStatus.COVER_LENS
                     else -> FingerDetectionStatus.NONE
                 }
 
                 // In biomedical smartphone PPG:
-                // Hemoglobin has a strong absorption peak in green wavelengths (~540nm).
-                // Blood pulse wave surges in systole -> absorption increases -> transmitted green light drops.
-                // Therefore, optical absorption = (255.0 - g) directly produces physiological systolic pulse peaks!
-                val pulsatileSignal = (255.0 - g)
+                // Optical density normalized by luminance: removes ambient / pressure lighting shifts
+                val pulsatileSignal = ((255.0 - g) / (avgY + 10.0)) * 200.0
 
                 onPPGUpdate(pulsatileSignal, isFingerPresent, status)
             }
