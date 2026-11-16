@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Log BioSense</string>
+    <string name="app_name">BioSense Log</string>
     <string name="title_blood_flow">Flux Sanguin (PPG)</string>
-    <string name="title_chest_vibe">Vibrations de la Poitrine</string>
+    <string name="title_chest_vibe">Vibrations thoraciques</string>
     <string name="measurement_history">Historique Biométrique</string>
     <string name="lbl_simulator">Simulateur Actif</string>
     <string name="lbl_hardware">Capteur Réel</string>

@@ -7,6 +7,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraState
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview as CameraPreview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -758,8 +759,16 @@ fun BiometricDashboard(
                                                                 imageAnalysis
                                                             )
                                                             activeCamera = cameraInstance
-                                                            if (!isSimulatorEnabled && cameraInstance.cameraInfo.hasFlashUnit()) {
-                                                                cameraInstance.cameraControl.enableTorch(true)
+                                                            if (cameraInstance.cameraInfo.hasFlashUnit()) {
+                                                                // The torch goes off whenever the camera closes (screen locked,
+                                                                // app in background) and CameraX does not restore it when it
+                                                                // reopens the camera, so switch it back on at every opening.
+                                                                cameraInstance.cameraInfo.cameraState.removeObservers(lifecycleOwner)
+                                                                cameraInstance.cameraInfo.cameraState.observe(lifecycleOwner) { state ->
+                                                                    if (state.type == CameraState.Type.OPEN) {
+                                                                        cameraInstance.cameraControl.enableTorch(true)
+                                                                    }
+                                                                }
                                                             }
                                                         } catch (e: Exception) {
                                                             e.printStackTrace()
@@ -770,6 +779,7 @@ fun BiometricDashboard(
                                                 },
                                                 onRelease = {
                                                     try {
+                                                        activeCamera?.cameraInfo?.cameraState?.removeObservers(lifecycleOwner)
                                                         activeCamera?.cameraControl?.enableTorch(false)
                                                         cameraProviderRef?.unbindAll()
                                                         activeCamera = null
@@ -1028,7 +1038,7 @@ fun BiometricDashboard(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = String.format(Locale.US, "%.3f", liveVibeRMS),
+                                        text = String.format(Locale.getDefault(), "%.3f", liveVibeRMS),
                                         style = MaterialTheme.typography.displayLarge.copy(fontSize = 58.sp),
                                         fontWeight = FontWeight.Light,
                                         color = Color.White,
@@ -1250,7 +1260,12 @@ fun BiometricDashboard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // The title takes the remaining width (and wraps if a translation is long)
+                    // so the Export button always keeps its label on one line.
+                    Row(
+                        modifier = Modifier.weight(1f).padding(end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
                             Icons.Rounded.History,
                             contentDescription = null,
@@ -1288,7 +1303,9 @@ fun BiometricDashboard(
                                 Text(
                                     text = stringResource(R.string.btn_export),
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
 
@@ -1871,6 +1888,9 @@ fun ColoredIndicatorBar(
             }
         }
 
+        // Keep the decimals that matter (0.05 m/s², 4.5 %) in the user's locale; whole numbers stay whole.
+        val number = remember { java.text.DecimalFormat("0.###") }
+        fun label(v: Float) = number.format(v.toDouble())
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1878,18 +1898,18 @@ fun ColoredIndicatorBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "${minVal.toInt()} $unit",
+                text = "${label(minVal)} $unit",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "${lowLimit.toInt()}-${highLimit.toInt()} $unit",
+                text = "${label(lowLimit)}-${label(highLimit)} $unit",
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF43A047)
             )
             Text(
-                text = "${maxVal.toInt()} $unit",
+                text = "${label(maxVal)} $unit",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
