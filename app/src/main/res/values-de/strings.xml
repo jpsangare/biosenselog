@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BioSense Log</string>
+    <string name="title_blood_flow">Blutfluss (PPG)</string>
+    <string name="title_chest_vibe">Brustvibration</string>
+    <string name="measurement_history">Biometrischer Verlauf</string>
+    <string name="lbl_simulator">Simulatormodus</string>
+    <string name="lbl_hardware">Echter Sensor</string>
+
+    <string name="btn_start">Messung starten</string>
+    <string name="btn_stop">Stopp</string>
+    <string name="btn_save">Speichern</string>
+    <string name="btn_clear_history">Verlauf löschen</string>
+
+    <string name="label_pulse">Puls: %d BPM</string>
+    <string name="label_amplitude">Amplitude: %.1f%%</string>
+    <string name="label_vibration">Vibration: %.3f m/s²</string>
+
+    <string name="guide_finger_ppg">Legen Sie die Zeigefingerkuppe flach auf die Linse der Rückkamera und decken Sie den Blitz ab.</string>
+    <string name="guide_vibe">Legen Sie sich hin und legen Sie das Telefon flach auf die Mitte Ihrer Brust.</string>
+    <string name="finger_not_detected">Finger nicht erkannt. Bitte Kameralinse und Blitz vollständig abdecken.</string>
+    <string name="finger_detected">Finger erkannt! Blutflusspuls wird analysiert...</string>
+    <string name="finger_status_too_dark">Zu dunkel. Prüfen Sie, ob der Blitz an ist und der Finger die Kamera abdeckt.</string>
+    <string name="finger_status_too_bright">Zu hell. Decken Sie die Linse gut mit der Fingerkuppe ab.</string>
+    <string name="finger_status_adjust">Decken Sie Rückkameralinse und Blitz vollständig mit der Fingerkuppe ab.</string>
+    <string name="test_simulate_finger">Fingerkontakt simulieren (Test)</string>
+
+    <string name="camera_permission_denied">Für den optischen Blutflusssensor ist die Kameraberechtigung erforderlich.</string>
+    <string name="btn_request_permission">Kamerazugriff erlauben</string>
+
+    <string name="status_low">Niedrig</string>
+    <string name="status_normal">Normal</string>
+    <string name="status_high">Hoch</string>
+
+    <string name="limit_pulse">Puls (Normalbereich: 60 - 100 BPM)</string>
+    <string name="limit_vibration">Vibration (Normalbereich: 0,050 - 0,250 m/s²)</string>
+    <string name="limit_volume" formatted="false">Perfusionsindex (Normalbereich: 1,0% - 4,5%)</string>
+
+    <string name="empty_history">Noch keine Messungen in der Datenbank gespeichert.</string>
+    <string name="last_measurement">Letzte Messung</string>
+    <string name="show_history">Verlauf anzeigen (%d)</string>
+    <string name="hide_history">Verlauf ausblenden</string>
+    <string name="dialog_clear_history_title">Verlauf löschen?</string>
+    <string name="dialog_clear_history_message">Alle %d gespeicherten Messungen werden endgültig gelöscht.</string>
+    <string name="toast_saved">Messung erfolgreich gespeichert!</string>
+    <string name="info_countdown">Kalibrierung... noch %d Sekunden</string>
+
+    <string name="tab_ppg">Blutfluss (PPG)</string>
+    <string name="tab_vibe">Brustvibration (SCG)</string>
+    <string name="unit_bpm">BPM</string>
+
+    <string name="abnormal_test">Abnormale Werte simulieren</string>
+    <string name="normal_test">Auf Normalwerte zurücksetzen</string>
+
+    <string name="tip_title_finger_placement">Wie platziere ich den Finger?</string>
+    <string name="tip_camera_choice">1. Hauptkamera: Decken Sie die Linse der Hauptrückkamera ab (meist die obere Linse).</string>
+    <string name="tip_flash_coverage">2. LED-Blitz: Der Blitz soll die Fingerkuppe durchleuchten, damit die Kapillaren rot leuchten.</string>
+    <string name="tip_gentle_pressure">3. Leichter Druck: Legen Sie den Finger sanft auf. Zu starker Druck unterbricht den Kapillarfluss.</string>
+    <string name="tip_keep_still">4. Stillhalten: Halten Sie den Finger ruhig, bis die Messung endet.</string>
+
+    <string name="btn_close_app">App schließen</string>
+    <string name="dialog_close_title">Anwendung schließen?</string>
+    <string name="dialog_close_message">Möchten Sie BioSense Log wirklich beenden?</string>
+    <string name="dialog_cancel">Abbrechen</string>
+    <string name="dialog_confirm_exit">Beenden</string>
+
+    <string name="btn_export">Exportieren</string>
+    <string name="dialog_export_title">Messungen exportieren</string>
+    <string name="export_format_csv">CSV (Tabelle)</string>
+    <string name="export_format_report">Zusammenfassender Bericht</string>
+    <string name="btn_share_export">Teilen</string>
+    <string name="btn_copy_export">Kopieren</string>
+    <string name="toast_copied">In die Zwischenablage kopiert!</string>
+    <string name="export_chooser_title">BioSense-Daten exportieren</string>
+    <string name="export_record_count">%d Messungen • BioSense Log</string>
+    <string name="label_hrv">HRV: %d ms</string>
+    <string name="trend_title">Verlauf</string>
+    <string name="range_7d">7 Tage</string>
+    <string name="range_30d">30 Tage</string>
+    <string name="range_all">Alle</string>
+    <string name="metric_primary">Puls</string>
+    <string name="metric_hrv">HRV</string>
+    <string name="trend_not_enough">Speichern Sie mindestens 2 Messungen in diesem Zeitraum, um einen Verlauf zu sehen.</string>
+    <string name="trend_summary">Min %1$s · Ø %2$s · Max %3$s</string>
+    <string name="duration_quick">Schnell (%d s)</string>
+    <string name="duration_hrv">HRV (%d s)</string>
+    <string name="duration_hint">Wählen Sie 60 s für HRV und Atemfrequenz.</string>
+    <string name="title_tremor">Handzittern</string>
+    <string name="guide_tremor">Setzen Sie sich, halten Sie das Telefon mit ausgestrecktem Arm vor sich und bleiben Sie %d Sekunden lang so ruhig wie möglich.</string>
+    <string name="tremor_info">Nur zur Information: Für mit dem Telefon gemessenes Zittern gibt es keinen validierten Normalbereich.</string>
+    <string name="label_breathing">Atmung: %d /min</string>
+    <string name="metric_breathing">Atmung</string>
+    <string name="duration_breathing">Atmung (%d s)</string>
+    <string name="duration_hint_breathing">Wählen Sie 60 s, um die Atemfrequenz zu messen.</string>
+    <string name="steps_today">Schritte heute</string>
+    <string name="btn_enable_steps">Aktivieren</string>
+    <string name="steps_unavailable">Kein Schrittzähler auf diesem Gerät</string>
+    <string name="app_subtitle">Bioanalyse</string>
+    <string name="label_ppg_analysis">PPG-Analyse</string>
+    <string name="label_scg">Seismokardiographie (SCG)</string>
+    <string name="label_rec">REC</string>
+    <string name="camera_active_flash">Kamera aktiv • Blitz an</string>
+    <string name="optical_sensor_active">Optischer Sensor aktiv</string>
+    <string name="cd_delete_measurement">Messung löschen</string>
+    <string name="disclaimer_title">Kein Medizinprodukt</string>
+    <string name="disclaimer_body">BioSense Log ist eine App für Wohlbefinden und Selbstbeobachtung. Sie ist kein Medizinprodukt und dient nicht der Diagnose, Behandlung oder Vorbeugung von Krankheiten.\n\nTelefonsensoren sind ungenauer als medizinische Geräte, und die angezeigten Referenzbereiche sind nur allgemeine Richtwerte.\n\nTreffen Sie keine Gesundheitsentscheidungen auf Grundlage dieser Werte. Wenn Sie sich unwohl fühlen oder um Ihre Gesundheit besorgt sind, wenden Sie sich an einen Arzt. Rufen Sie im Notfall die örtliche Notrufnummer an.</string>
+    <string name="disclaimer_accept">Verstanden</string>
+    <string name="disclaimer_footer">Kein Medizinprodukt. Nur für Wohlbefinden und Selbstbeobachtung, nicht zur Diagnose.</string>
+    <string name="welcome_title">Bevor Sie beginnen</string>
+    <string name="privacy_title">Ihre Daten bleiben auf Ihrem Telefon</string>
+    <string name="privacy_body">Alle Messungen werden ausschließlich auf diesem Telefon gespeichert. BioSense Log erfasst nichts und sendet nichts: Die App hat keinen Internetzugang. Ihre Daten verlassen das Telefon nur, wenn Sie sie selbst exportieren oder teilen.</string>
+    <string name="free_title">Kostenlos</string>
+    <string name="free_body">BioSense Log ist vollständig kostenlos. Wenn Ihnen die App hilft, unterstützen Sie sie mit einer Bewertung und einer Rezension bei Google Play, damit mehr Menschen sie entdecken.</string>
+    <string name="btn_rate_app">App bewerten</string>
+    <string name="footer_privacy">Ihre Daten bleiben auf Ihrem Telefon. Es wird nichts erfasst oder gesendet.</string>
+    <string name="language_title">Sprache</string>
+    <string name="language_system">Systemsprache</string>
+    <string name="cd_change_language">Sprache ändern</string>
+</resources>

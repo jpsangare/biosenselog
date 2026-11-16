@@ -1,0 +1,24 @@
+BioSense Log transforme les capteurs de votre téléphone en un journal de bien-être simple. Sans compte, sans accès à internet : chaque mesure reste sur votre téléphone.
+
+CE QUE VOUS POUVEZ MESURER
+• Pouls : posez le bout du doigt sur la caméra et le flash. L'app suit les infimes variations de couleur provoquées par chaque battement.
+• Variabilité de la fréquence cardiaque (VFC) : RMSSD et SDNN, avec un mode dédié de 60 secondes.
+• Fréquence respiratoire : à partir du signal du pouls, ou avec le téléphone posé sur la poitrine (capteur de mouvement).
+• Test de tremblement : un test de 15 secondes qui indique l'amplitude et la fréquence principale des mouvements de la main.
+• Les pas du jour, grâce au podomètre du téléphone.
+
+SUIVEZ VOS TENDANCES
+• Historique avec graphique de tendance et dernier résultat en un coup d'œil.
+• Supprimez une mesure ou videz tout l'historique.
+• Exportez vos mesures en tableur (CSV) ou en rapport lisible, à copier ou partager quand vous le décidez.
+
+CONFIDENTIEL PAR CONCEPTION
+• L'app n'a pas l'autorisation d'accès à internet : elle ne peut envoyer vos données nulle part.
+• Ni publicité, ni statistiques, ni traceurs, ni compte.
+• Les mesures sont exclues de la sauvegarde cloud.
+
+DISPONIBLE EN 8 LANGUES
+Anglais, français, espagnol, allemand, portugais, chinois, arabe et hindi. Changez de langue depuis l'app.
+
+IMPORTANT
+BioSense Log est une application de bien-être et de suivi personnel. Ce n'est pas un dispositif médical : elle ne diagnostique, ne traite et ne prévient aucune maladie. Les capteurs d'un téléphone sont moins précis qu'un équipement médical. N'utilisez pas ces mesures pour prendre des décisions de santé. En cas de malaise, consultez un médecin ; en cas d'urgence, appelez le numéro d'urgence local.

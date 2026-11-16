@@ -1,57 +1,12 @@
 package com.example
 
-import com.example.sensor.FingerDetectionStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+// Finger detection and the PPG signal formula are tested on the real code in sensor/FrameAnalysisTest.kt.
 class ExampleUnitTest {
-
-    @Test
-    fun testFingerDetectionColorClassification() {
-        // Red illuminated flesh (typical camera with finger on lens + flash)
-        val avgYFlesh = 120.0
-        val avgUFlesh = 90.0   // Suppressed blue chroma
-        val avgVFlesh = 180.0  // High red chroma
-
-        val r = (avgYFlesh + 1.402 * (avgVFlesh - 128.0)).coerceIn(0.0, 255.0)
-        val g = (avgYFlesh - 0.344136 * (avgUFlesh - 128.0) - 0.714136 * (avgVFlesh - 128.0)).coerceIn(0.0, 255.0)
-        val b = (avgYFlesh + 1.772 * (avgUFlesh - 128.0)).coerceIn(0.0, 255.0)
-
-        val isLightAdequate = avgYFlesh in 15.0..253.0
-        val isRedDominant = (avgVFlesh >= 134.0 && (avgVFlesh - avgUFlesh >= 10.0)) ||
-                (r >= 50.0 && r > g * 1.08 && r > b * 1.20)
-
-        assertTrue("Flesh with flashlight should be detected as adequate light", isLightAdequate)
-        assertTrue("Flesh with flashlight should be detected as red-dominant", isRedDominant)
-
-        // Normal neutral room lighting (gray/white wall, desk, or paper)
-        val avgYNeutral = 130.0
-        val avgUNeutral = 128.0
-        val avgVNeutral = 129.0
-        val isNeutralRedDominant = (avgVNeutral >= 134.0 && (avgVNeutral - avgUNeutral >= 10.0))
-        assertFalse("Neutral lighting should NOT be detected as finger", isNeutralRedDominant)
-
-        // Pitch dark (camera covered with dark cloth without flash)
-        val avgYDark = 5.0
-        val isDarkAdequate = avgYDark in 15.0..253.0
-        assertFalse("Dark frame should NOT be adequate light", isDarkAdequate)
-    }
-
-    @Test
-    fun testPpgOpticalDensitySignalDirection() {
-        // During ventricular systole:
-        // Capillary hemoglobin expands -> absorbs more green light -> transmitted green drops
-        val diastolicGreen = 85.0
-        val systolicGreen = 75.0 // Green drops during systole
-        val avgY = 110.0
-
-        val diastolicSignal = ((255.0 - diastolicGreen) / (avgY + 10.0)) * 200.0
-        val systolicSignal = ((255.0 - systolicGreen) / (avgY + 10.0)) * 200.0
-
-        assertTrue("Systolic blood surge must produce a positive peak in the normalized PPG optical density signal", systolicSignal > diastolicSignal)
-    }
 
     @Test
     fun testParabolicPeakInterpolation() {

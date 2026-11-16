@@ -1,0 +1,24 @@
+BioSense Log macht die Sensoren deines Handys zu einem einfachen Wellness-Tagebuch. Kein Konto, kein Internetzugriff: Jede Messung bleibt auf deinem Handy.
+
+WAS DU MESSEN KANNST
+• Puls: Lege eine Fingerkuppe auf Kamera und Blitz. Die App verfolgt die winzigen Farbänderungen, die jeder Herzschlag verursacht.
+• Herzfrequenzvariabilität (HRV): RMSSD und SDNN, mit eigenem 60-Sekunden-Modus.
+• Atemfrequenz: aus dem Pulssignal oder mit dem Handy auf der Brust (Bewegungssensor).
+• Zittertest: ein 15-Sekunden-Test, der Stärke und Hauptfrequenz der Handbewegungen anzeigt.
+• Die heutigen Schritte über den Schrittzähler des Handys.
+
+VERLÄUFE IM BLICK
+• Verlauf mit Trenddiagramm und deinem letzten Ergebnis auf einen Blick.
+• Einzelne Messungen löschen oder den ganzen Verlauf leeren.
+• Messungen als Tabelle (CSV) oder lesbaren Bericht exportieren, zum Kopieren oder Teilen, wann du willst.
+
+DATENSCHUTZ VON GRUND AUF
+• Die App hat keine Internetberechtigung: Sie kann deine Daten nirgendwohin senden.
+• Keine Werbung, keine Statistik, keine Tracker, kein Konto.
+• Messungen sind von der Cloud-Sicherung ausgeschlossen.
+
+IN 8 SPRACHEN
+Englisch, Französisch, Spanisch, Deutsch, Portugiesisch, Chinesisch, Arabisch und Hindi. Die Sprache lässt sich direkt in der App ändern.
+
+WICHTIG
+BioSense Log ist eine App für Wohlbefinden und Selbstbeobachtung. Sie ist kein Medizinprodukt und dient nicht der Diagnose, Behandlung oder Vorbeugung von Krankheiten. Handysensoren sind ungenauer als medizinische Geräte. Triff keine Gesundheitsentscheidungen auf Grundlage dieser Werte. Wenn du dich unwohl fühlst, wende dich an einen Arzt; im Notfall wähle die örtliche Notrufnummer.

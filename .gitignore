@@ -16,3 +16,7 @@
 local.properties
 .env
 debug.keystore
+
+# Release signing key: never commit it (losing or leaking it is hard to undo)
+*.jks
+*.keystore

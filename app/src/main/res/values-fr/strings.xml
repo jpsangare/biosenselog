@@ -37,6 +37,11 @@
     <string name="limit_volume" formatted="false">Volume du flux (Limites normales : 1,0% - 4,5%)</string>
     
     <string name="empty_history">Aucune mesure enregistrée dans la base de données.</string>
+    <string name="last_measurement">Dernière mesure</string>
+    <string name="show_history">Voir l\'historique (%d)</string>
+    <string name="hide_history">Masquer l\'historique</string>
+    <string name="dialog_clear_history_title">Vider l\'historique ?</string>
+    <string name="dialog_clear_history_message">Les %d mesures enregistrées seront définitivement supprimées.</string>
     <string name="toast_saved">Mesure enregistrée avec succès !</string>
     <string name="info_countdown">Calibrage... %d secondes restantes</string>
     
@@ -51,7 +56,7 @@
     <string name="tip_camera_choice">1. Première caméra : Couvrez l\'objectif de la caméra arrière principale (généralement la lentille supérieure).</string>
     <string name="tip_flash_coverage">2. Flash LED : Le flash doit éclairer la pulpe du doigt pour faire briller les capillaires en rouge.</string>
     <string name="tip_gentle_pressure">3. Pression légère : Posez le doigt délicatement. Appuyer trop fort coupe la circulation sanguine capillaire.</string>
-    <string name="tip_keep_still">4. Immobilité : Gardez le doigt bien immobile pendant les 10 secondes de mesure.</string>
+    <string name="tip_keep_still">4. Immobilité : Gardez le doigt bien immobile jusqu\'à la fin de la mesure.</string>
 
     <string name="btn_close_app">Fermer l\'appli</string>
     <string name="dialog_close_title">Quitter l\'application ?</string>
@@ -67,4 +72,48 @@
     <string name="btn_copy_export">Copier</string>
     <string name="toast_copied">Copié dans le presse-papier !</string>
     <string name="export_chooser_title">Exporter les données BioSense</string>
+    <string name="export_record_count">%d mesures • BioSense Log</string>
+    <string name="label_hrv">VFC : %d ms</string>
+    <string name="trend_title">Tendance</string>
+    <string name="range_7d">7 jours</string>
+    <string name="range_30d">30 jours</string>
+    <string name="range_all">Tout</string>
+    <string name="metric_primary">Pouls</string>
+    <string name="metric_hrv">VFC</string>
+    <string name="trend_not_enough">Enregistrez au moins 2 mesures sur cette période pour voir une tendance.</string>
+    <string name="trend_summary">Min %1$s · Moy %2$s · Max %3$s</string>
+    <string name="duration_quick">Rapide (%d s)</string>
+    <string name="duration_hrv">VFC (%d s)</string>
+    <string name="duration_hint">Choisissez 60 s pour la VFC et la fréquence respiratoire.</string>
+    <string name="title_tremor">Tremblement</string>
+    <string name="guide_tremor">Asseyez-vous, tenez le téléphone dans la main, bras tendu devant vous, et restez aussi immobile que possible pendant %d secondes.</string>
+    <string name="tremor_info">À titre indicatif : il n\'existe pas de plage normale validée pour un tremblement mesuré avec un téléphone.</string>
+    <string name="label_breathing">Respiration : %d /min</string>
+    <string name="metric_breathing">Respiration</string>
+    <string name="duration_breathing">Respiration (%d s)</string>
+    <string name="duration_hint_breathing">Choisissez 60 s pour mesurer la fréquence respiratoire.</string>
+    <string name="steps_today">Pas aujourd\'hui</string>
+    <string name="btn_enable_steps">Activer</string>
+    <string name="steps_unavailable">Pas de podomètre sur cet appareil</string>
+    <string name="app_subtitle">Bio-analyse</string>
+    <string name="label_ppg_analysis">Analyse PPG</string>
+    <string name="label_scg">Sismocardiographie (SCG)</string>
+    <string name="label_rec">REC</string>
+    <string name="camera_active_flash">Caméra active • Flash allumé</string>
+    <string name="optical_sensor_active">Capteur optique actif</string>
+    <string name="cd_delete_measurement">Supprimer la mesure</string>
+    <string name="disclaimer_title">Ceci n\'est pas un dispositif médical</string>
+    <string name="disclaimer_body">BioSense Log est une application de bien-être et d\'auto-suivi. Ce n\'est pas un dispositif médical : elle ne diagnostique, ne traite ni ne prévient aucune maladie.\n\nLes capteurs du téléphone sont moins précis qu\'un équipement médical, et les plages de référence affichées sont données à titre indicatif.\n\nN\'utilisez pas ces mesures pour prendre des décisions de santé. Si vous ne vous sentez pas bien ou êtes inquiet pour votre santé, consultez un médecin. En cas d\'urgence, appelez le numéro d\'urgence local.</string>
+    <string name="disclaimer_accept">J\'ai compris</string>
+    <string name="disclaimer_footer">Pas un dispositif médical. Pour le bien-être et l\'auto-suivi uniquement, pas pour le diagnostic.</string>
+    <string name="welcome_title">Avant de commencer</string>
+    <string name="privacy_title">Vos données restent sur votre téléphone</string>
+    <string name="privacy_body">Toutes vos mesures sont stockées uniquement sur ce téléphone. BioSense Log ne collecte rien et n\'envoie rien : l\'application n\'a pas accès à Internet. Vos données ne quittent le téléphone que si vous choisissez vous-même de les exporter ou de les partager.</string>
+    <string name="free_title">Gratuite</string>
+    <string name="free_body">BioSense Log est entièrement gratuite. Si elle vous est utile, soutenez-la en lui donnant une note et en laissant un commentaire sur Google Play, pour que d\'autres personnes la découvrent.</string>
+    <string name="btn_rate_app">Noter l\'application</string>
+    <string name="footer_privacy">Vos données restent sur votre téléphone. Rien n\'est collecté ni envoyé.</string>
+    <string name="language_title">Langue</string>
+    <string name="language_system">Langue du téléphone</string>
+    <string name="cd_change_language">Changer de langue</string>
 </resources>

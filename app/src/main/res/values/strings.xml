@@ -37,6 +37,11 @@
     <string name="limit_volume" formatted="false">Perfusion Index (Normal limits: 1.0% - 4.5%)</string>
     
     <string name="empty_history">No measurements logged in database yet.</string>
+    <string name="last_measurement">Latest measurement</string>
+    <string name="show_history">Show history (%d)</string>
+    <string name="hide_history">Hide history</string>
+    <string name="dialog_clear_history_title">Clear history?</string>
+    <string name="dialog_clear_history_message">All %d saved measurements will be permanently deleted.</string>
     <string name="toast_saved">Biometrics logged successfully!</string>
     <string name="info_countdown">Calibrating... %d seconds left</string>
     
@@ -51,7 +56,7 @@
     <string name="tip_camera_choice">1. Main Camera: Cover the primary rear camera lens (usually the top lens).</string>
     <string name="tip_flash_coverage">2. LED Flash: Light up fingertip tissue so capillary blood glows translucent red.</string>
     <string name="tip_gentle_pressure">3. Gentle Touch: Rest finger lightly. Pressing too hard cuts off capillary blood flow.</string>
-    <string name="tip_keep_still">4. Keep Still: Hold finger steady throughout the 10-second measurement.</string>
+    <string name="tip_keep_still">4. Keep Still: Hold finger steady until the measurement ends.</string>
 
     <string name="btn_close_app">Close App</string>
     <string name="dialog_close_title">Close Application?</string>
@@ -67,4 +72,48 @@
     <string name="btn_copy_export">Copy</string>
     <string name="toast_copied">Copied to clipboard!</string>
     <string name="export_chooser_title">Export BioSense Data</string>
+    <string name="export_record_count">%d measurements • BioSense Log</string>
+    <string name="label_hrv">HRV: %d ms</string>
+    <string name="trend_title">Trend</string>
+    <string name="range_7d">7 days</string>
+    <string name="range_30d">30 days</string>
+    <string name="range_all">All</string>
+    <string name="metric_primary">Pulse</string>
+    <string name="metric_hrv">HRV</string>
+    <string name="trend_not_enough">Save at least 2 measurements in this period to see a trend.</string>
+    <string name="trend_summary">Min %1$s · Avg %2$s · Max %3$s</string>
+    <string name="duration_quick">Quick (%d s)</string>
+    <string name="duration_hrv">HRV (%d s)</string>
+    <string name="duration_hint">Choose 60 s for HRV and breathing rate.</string>
+    <string name="title_tremor">Hand Tremor</string>
+    <string name="guide_tremor">Sit down, hold the phone in your hand with your arm stretched out in front of you, and keep as still as you can for %d seconds.</string>
+    <string name="tremor_info">For information only: there is no validated normal range for tremor measured with a phone.</string>
+    <string name="label_breathing">Breathing: %d /min</string>
+    <string name="metric_breathing">Breathing</string>
+    <string name="duration_breathing">Breathing (%d s)</string>
+    <string name="duration_hint_breathing">Choose 60 s to measure breathing rate.</string>
+    <string name="steps_today">Today\'s steps</string>
+    <string name="btn_enable_steps">Enable</string>
+    <string name="steps_unavailable">No step counter on this device</string>
+    <string name="app_subtitle">Bio-analytics</string>
+    <string name="label_ppg_analysis">PPG analysis</string>
+    <string name="label_scg">Seismocardiography (SCG)</string>
+    <string name="label_rec">REC</string>
+    <string name="camera_active_flash">Camera active • Flash on</string>
+    <string name="optical_sensor_active">Optical sensor active</string>
+    <string name="cd_delete_measurement">Delete measurement</string>
+    <string name="disclaimer_title">Not a medical device</string>
+    <string name="disclaimer_body">BioSense Log is a wellness and self-tracking app. It is not a medical device and does not diagnose, treat or prevent any disease.\n\nPhone sensors are less accurate than medical equipment, and the reference ranges shown are general indications only.\n\nDo not use these readings to make health decisions. If you feel unwell or are worried about your health, contact a doctor. In an emergency, call your local emergency number.</string>
+    <string name="disclaimer_accept">I understand</string>
+    <string name="disclaimer_footer">Not a medical device. For wellness and self-tracking only, not for diagnosis.</string>
+    <string name="welcome_title">Before you start</string>
+    <string name="privacy_title">Your data stays on your phone</string>
+    <string name="privacy_body">All your measurements are stored only on this phone. BioSense Log collects nothing and sends nothing: the app has no internet access. Your data leaves the phone only if you choose to export or share it yourself.</string>
+    <string name="free_title">Free to use</string>
+    <string name="free_body">BioSense Log is completely free. If you find it useful, please support it by rating it and leaving a review on Google Play, so more people can discover it.</string>
+    <string name="btn_rate_app">Rate the app</string>
+    <string name="footer_privacy">Your data stays on your phone. Nothing is collected or sent.</string>
+    <string name="language_title">Language</string>
+    <string name="language_system">System default</string>
+    <string name="cd_change_language">Change language</string>
 </resources>

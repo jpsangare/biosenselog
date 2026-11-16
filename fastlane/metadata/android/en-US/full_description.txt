@@ -1,0 +1,24 @@
+BioSense Log turns your phone's sensors into a simple wellness journal. No account, no internet access: every measurement stays on your phone.
+
+WHAT YOU CAN MEASURE
+• Pulse: place a fingertip on the camera and flash. The app follows the tiny colour changes caused by each heartbeat.
+• Heart rate variability (HRV): RMSSD and SDNN, with a dedicated 60-second mode.
+• Breathing rate: from the pulse signal, or with the phone resting on your chest (motion sensor).
+• Tremor test: a 15-second test that reports the amplitude and main frequency of hand movements.
+• Today's steps, from your phone's step counter.
+
+FOLLOW YOUR TRENDS
+• History with a trend chart and your latest result at a glance.
+• Delete a single measurement or clear the whole history.
+• Export your measurements as a spreadsheet file (CSV) or a readable report, to copy or share when you choose.
+
+PRIVATE BY DESIGN
+• The app has no internet permission: it cannot send your data anywhere.
+• No ads, no analytics, no trackers, no account.
+• Measurements are kept out of cloud backup.
+
+AVAILABLE IN 8 LANGUAGES
+English, French, Spanish, German, Portuguese, Chinese, Arabic and Hindi. Change the language from inside the app.
+
+IMPORTANT
+BioSense Log is a wellness and self-tracking app. It is not a medical device and does not diagnose, treat or prevent any disease. Phone sensors are less accurate than medical equipment. Do not use these readings to make health decisions. If you feel unwell, contact a doctor; in an emergency, call your local emergency number.

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BioSense Log</string>
+    <string name="title_blood_flow">रक्त प्रवाह (PPG)</string>
+    <string name="title_chest_vibe">छाती का कंपन</string>
+    <string name="measurement_history">बायोमेट्रिक इतिहास</string>
+    <string name="lbl_simulator">सिम्युलेटर मोड</string>
+    <string name="lbl_hardware">वास्तविक सेंसर</string>
+
+    <string name="btn_start">माप शुरू करें</string>
+    <string name="btn_stop">रोकें</string>
+    <string name="btn_save">सहेजें</string>
+    <string name="btn_clear_history">इतिहास साफ़ करें</string>
+
+    <string name="label_pulse">नाड़ी: %d BPM</string>
+    <string name="label_amplitude">आयाम: %.1f%%</string>
+    <string name="label_vibration">कंपन: %.3f m/s²</string>
+
+    <string name="guide_finger_ppg">तर्जनी उंगली के सिरे को पीछे के कैमरा लेंस पर सपाट रखें और फ़्लैश को ढकें।</string>
+    <string name="guide_vibe">लेट जाएं और फ़ोन को अपनी छाती के बीच में सपाट रखें।</string>
+    <string name="finger_not_detected">उंगली का पता नहीं चला। कृपया कैमरा लेंस और फ़्लैश को पूरी तरह ढकें।</string>
+    <string name="finger_detected">उंगली का पता चला! रक्त प्रवाह नाड़ी का विश्लेषण हो रहा है...</string>
+    <string name="finger_status_too_dark">बहुत अंधेरा। सुनिश्चित करें कि फ़्लैश चालू है और उंगली कैमरे को ढक रही है।</string>
+    <string name="finger_status_too_bright">बहुत अधिक रोशनी। उंगली के सिरे से लेंस को अच्छी तरह ढकें।</string>
+    <string name="finger_status_adjust">उंगली के सिरे से पीछे के कैमरा लेंस और फ़्लैश को पूरी तरह ढकें।</string>
+    <string name="test_simulate_finger">उंगली स्पर्श का अनुकरण करें (परीक्षण)</string>
+
+    <string name="camera_permission_denied">ऑप्टिकल रक्त प्रवाह सेंसर का उपयोग करने के लिए कैमरा अनुमति आवश्यक है।</string>
+    <string name="btn_request_permission">कैमरा अनुमति दें</string>
+
+    <string name="status_low">कम</string>
+    <string name="status_normal">सामान्य</string>
+    <string name="status_high">अधिक</string>
+
+    <string name="limit_pulse">नाड़ी (सामान्य सीमा: 60 - 100 BPM)</string>
+    <string name="limit_vibration">कंपन (सामान्य सीमा: 0.050 - 0.250 m/s²)</string>
+    <string name="limit_volume" formatted="false">परफ़्यूज़न इंडेक्स (सामान्य सीमा: 1.0% - 4.5%)</string>
+
+    <string name="empty_history">डेटाबेस में अभी तक कोई माप दर्ज नहीं है।</string>
+    <string name="last_measurement">नवीनतम माप</string>
+    <string name="show_history">इतिहास देखें (%d)</string>
+    <string name="hide_history">इतिहास छिपाएं</string>
+    <string name="dialog_clear_history_title">इतिहास साफ़ करें?</string>
+    <string name="dialog_clear_history_message">सभी %d सहेजे गए माप स्थायी रूप से हटा दिए जाएंगे।</string>
+    <string name="toast_saved">माप सफलतापूर्वक सहेजा गया!</string>
+    <string name="info_countdown">कैलिब्रेट हो रहा है... %d सेकंड शेष</string>
+
+    <string name="tab_ppg">रक्त प्रवाह (PPG)</string>
+    <string name="tab_vibe">छाती का कंपन (SCG)</string>
+    <string name="unit_bpm">BPM</string>
+
+    <string name="abnormal_test">असामान्य मानों का अनुकरण करें</string>
+    <string name="normal_test">सामान्य मानों पर लौटें</string>
+
+    <string name="tip_title_finger_placement">उंगली कैसे रखें?</string>
+    <string name="tip_camera_choice">1. मुख्य कैमरा: पीछे के मुख्य कैमरे का लेंस ढकें (आमतौर पर सबसे ऊपर वाला लेंस)।</string>
+    <string name="tip_flash_coverage">2. LED फ़्लैश: फ़्लैश से उंगली का सिरा रोशन होना चाहिए ताकि केशिकाएं लाल चमकें।</string>
+    <string name="tip_gentle_pressure">3. हल्का दबाव: उंगली को धीरे से रखें। ज़्यादा दबाने से केशिका रक्त प्रवाह रुक जाता है।</string>
+    <string name="tip_keep_still">4. स्थिर रहें: माप समाप्त होने तक उंगली स्थिर रखें।</string>
+
+    <string name="btn_close_app">ऐप बंद करें</string>
+    <string name="dialog_close_title">ऐप्लिकेशन बंद करें?</string>
+    <string name="dialog_close_message">क्या आप वाकई BioSense Log से बाहर निकलना चाहते हैं?</string>
+    <string name="dialog_cancel">रद्द करें</string>
+    <string name="dialog_confirm_exit">बाहर निकलें</string>
+
+    <string name="btn_export">निर्यात करें</string>
+    <string name="dialog_export_title">माप निर्यात करें</string>
+    <string name="export_format_csv">CSV (स्प्रेडशीट)</string>
+    <string name="export_format_report">सारांश रिपोर्ट</string>
+    <string name="btn_share_export">साझा करें</string>
+    <string name="btn_copy_export">कॉपी करें</string>
+    <string name="toast_copied">क्लिपबोर्ड पर कॉपी किया गया!</string>
+    <string name="export_chooser_title">BioSense डेटा निर्यात करें</string>
+    <string name="export_record_count">%d माप • BioSense Log</string>
+    <string name="label_hrv">HRV: %d ms</string>
+    <string name="trend_title">रुझान</string>
+    <string name="range_7d">7 दिन</string>
+    <string name="range_30d">30 दिन</string>
+    <string name="range_all">सभी</string>
+    <string name="metric_primary">नाड़ी</string>
+    <string name="metric_hrv">HRV</string>
+    <string name="trend_not_enough">रुझान देखने के लिए इस अवधि में कम से कम 2 माप सहेजें।</string>
+    <string name="trend_summary">न्यूनतम %1$s · औसत %2$s · अधिकतम %3$s</string>
+    <string name="duration_quick">त्वरित (%d सेकंड)</string>
+    <string name="duration_hrv">HRV (%d सेकंड)</string>
+    <string name="duration_hint">HRV और श्वास दर के लिए 60 सेकंड चुनें।</string>
+    <string name="title_tremor">हाथ का कंपन</string>
+    <string name="guide_tremor">बैठ जाएं, फ़ोन को हाथ में पकड़कर बांह सामने सीधी फैलाएं, और %d सेकंड तक जितना हो सके स्थिर रहें।</string>
+    <string name="tremor_info">केवल जानकारी के लिए: फ़ोन से मापे गए कंपन की कोई मान्य सामान्य सीमा नहीं है।</string>
+    <string name="label_breathing">श्वास: %d /मिनट</string>
+    <string name="metric_breathing">श्वास</string>
+    <string name="duration_breathing">श्वास (%d सेकंड)</string>
+    <string name="duration_hint_breathing">श्वास दर मापने के लिए 60 सेकंड चुनें।</string>
+    <string name="steps_today">आज के कदम</string>
+    <string name="btn_enable_steps">चालू करें</string>
+    <string name="steps_unavailable">इस डिवाइस में स्टेप काउंटर नहीं है</string>
+    <string name="app_subtitle">जैव-विश्लेषण</string>
+    <string name="label_ppg_analysis">PPG विश्लेषण</string>
+    <string name="label_scg">सिस्मोकार्डियोग्राफ़ी (SCG)</string>
+    <string name="label_rec">REC</string>
+    <string name="camera_active_flash">कैमरा सक्रिय • फ़्लैश चालू</string>
+    <string name="optical_sensor_active">ऑप्टिकल सेंसर सक्रिय</string>
+    <string name="cd_delete_measurement">माप हटाएं</string>
+    <string name="disclaimer_title">यह चिकित्सा उपकरण नहीं है</string>
+    <string name="disclaimer_body">BioSense Log एक वेलनेस और स्व-निगरानी ऐप है। यह चिकित्सा उपकरण नहीं है और किसी भी बीमारी का निदान, उपचार या रोकथाम नहीं करता।\n\nफ़ोन के सेंसर चिकित्सा उपकरणों से कम सटीक होते हैं, और दिखाई गई संदर्भ सीमाएं केवल सामान्य संकेत हैं।\n\nइन मापों के आधार पर स्वास्थ्य संबंधी निर्णय न लें। अगर आप अस्वस्थ महसूस करते हैं या अपने स्वास्थ्य को लेकर चिंतित हैं, तो डॉक्टर से संपर्क करें। आपात स्थिति में अपने स्थानीय आपातकालीन नंबर पर कॉल करें।</string>
+    <string name="disclaimer_accept">मैं समझ गया/गई</string>
+    <string name="disclaimer_footer">चिकित्सा उपकरण नहीं। केवल वेलनेस और स्व-निगरानी के लिए, निदान के लिए नहीं।</string>
+    <string name="welcome_title">शुरू करने से पहले</string>
+    <string name="privacy_title">आपका डेटा आपके फ़ोन पर ही रहता है</string>
+    <string name="privacy_body">आपके सभी माप केवल इसी फ़ोन पर सहेजे जाते हैं। BioSense Log कुछ भी इकट्ठा या भेजता नहीं है: ऐप के पास इंटरनेट की अनुमति ही नहीं है। आपका डेटा फ़ोन से तभी बाहर जाता है जब आप स्वयं उसे निर्यात या साझा करना चुनते हैं।</string>
+    <string name="free_title">पूरी तरह मुफ़्त</string>
+    <string name="free_body">BioSense Log पूरी तरह मुफ़्त है। अगर यह आपके काम का है, तो Google Play पर इसे रेटिंग और समीक्षा देकर इसका समर्थन करें, ताकि और लोग इसे खोज सकें।</string>
+    <string name="btn_rate_app">ऐप को रेट करें</string>
+    <string name="footer_privacy">आपका डेटा आपके फ़ोन पर ही रहता है। कुछ भी इकट्ठा या भेजा नहीं जाता।</string>
+    <string name="language_title">भाषा</string>
+    <string name="language_system">फ़ोन की भाषा</string>
+    <string name="cd_change_language">भाषा बदलें</string>
+</resources>

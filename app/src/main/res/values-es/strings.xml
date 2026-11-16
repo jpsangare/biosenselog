@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BioSense Log</string>
+    <string name="title_blood_flow">Flujo sanguíneo (PPG)</string>
+    <string name="title_chest_vibe">Vibración torácica</string>
+    <string name="measurement_history">Historial biométrico</string>
+    <string name="lbl_simulator">Modo simulador</string>
+    <string name="lbl_hardware">Sensor real</string>
+
+    <string name="btn_start">Iniciar medición</string>
+    <string name="btn_stop">Detener</string>
+    <string name="btn_save">Guardar</string>
+    <string name="btn_clear_history">Borrar historial</string>
+
+    <string name="label_pulse">Pulso: %d BPM</string>
+    <string name="label_amplitude">Amplitud: %.1f%%</string>
+    <string name="label_vibration">Vibración: %.3f m/s²</string>
+
+    <string name="guide_finger_ppg">Coloque la yema del dedo índice sobre la lente de la cámara trasera y cubra el flash.</string>
+    <string name="guide_vibe">Acuéstese y coloque el teléfono plano en el centro de su pecho.</string>
+    <string name="finger_not_detected">Dedo no detectado. Cubra completamente la lente de la cámara y el flash.</string>
+    <string name="finger_detected">¡Dedo detectado! Analizando el pulso del flujo sanguíneo...</string>
+    <string name="finger_status_too_dark">Demasiado oscuro. Compruebe que el flash esté encendido y que el dedo cubra la cámara.</string>
+    <string name="finger_status_too_bright">Demasiado brillante. Cubra bien la lente con la yema del dedo.</string>
+    <string name="finger_status_adjust">Cubra completamente la lente trasera y el flash con la yema del dedo.</string>
+    <string name="test_simulate_finger">Simular contacto del dedo (Prueba)</string>
+
+    <string name="camera_permission_denied">Se requiere permiso de cámara para usar el sensor óptico de flujo sanguíneo.</string>
+    <string name="btn_request_permission">Conceder permiso de cámara</string>
+
+    <string name="status_low">Bajo</string>
+    <string name="status_normal">Normal</string>
+    <string name="status_high">Alto</string>
+
+    <string name="limit_pulse">Pulso (Límites normales: 60 - 100 BPM)</string>
+    <string name="limit_vibration">Vibración (Límites normales: 0,050 - 0,250 m/s²)</string>
+    <string name="limit_volume" formatted="false">Índice de perfusión (Límites normales: 1,0% - 4,5%)</string>
+
+    <string name="empty_history">Aún no hay mediciones registradas en la base de datos.</string>
+    <string name="last_measurement">Última medición</string>
+    <string name="show_history">Ver historial (%d)</string>
+    <string name="hide_history">Ocultar historial</string>
+    <string name="dialog_clear_history_title">¿Borrar historial?</string>
+    <string name="dialog_clear_history_message">Las %d mediciones guardadas se eliminarán permanentemente.</string>
+    <string name="toast_saved">¡Medición guardada correctamente!</string>
+    <string name="info_countdown">Calibrando... quedan %d segundos</string>
+
+    <string name="tab_ppg">Flujo sanguíneo (PPG)</string>
+    <string name="tab_vibe">Vibración torácica (SCG)</string>
+    <string name="unit_bpm">BPM</string>
+
+    <string name="abnormal_test">Simular valores anormales</string>
+    <string name="normal_test">Volver a valores normales</string>
+
+    <string name="tip_title_finger_placement">¿Cómo colocar el dedo?</string>
+    <string name="tip_camera_choice">1. Cámara principal: Cubra la lente de la cámara trasera principal (normalmente la lente superior).</string>
+    <string name="tip_flash_coverage">2. Flash LED: El flash debe iluminar la yema del dedo para que los capilares brillen en rojo.</string>
+    <string name="tip_gentle_pressure">3. Presión suave: Apoye el dedo con suavidad. Presionar demasiado corta el flujo capilar.</string>
+    <string name="tip_keep_still">4. Inmovilidad: Mantenga el dedo quieto hasta que termine la medición.</string>
+
+    <string name="btn_close_app">Cerrar app</string>
+    <string name="dialog_close_title">¿Cerrar la aplicación?</string>
+    <string name="dialog_close_message">¿Seguro que desea salir de BioSense Log?</string>
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_confirm_exit">Salir</string>
+
+    <string name="btn_export">Exportar</string>
+    <string name="dialog_export_title">Exportar mediciones</string>
+    <string name="export_format_csv">CSV (Hoja de cálculo)</string>
+    <string name="export_format_report">Informe resumido</string>
+    <string name="btn_share_export">Compartir</string>
+    <string name="btn_copy_export">Copiar</string>
+    <string name="toast_copied">¡Copiado al portapapeles!</string>
+    <string name="export_chooser_title">Exportar datos de BioSense</string>
+    <string name="export_record_count">%d mediciones • BioSense Log</string>
+    <string name="label_hrv">VFC: %d ms</string>
+    <string name="trend_title">Tendencia</string>
+    <string name="range_7d">7 días</string>
+    <string name="range_30d">30 días</string>
+    <string name="range_all">Todo</string>
+    <string name="metric_primary">Pulso</string>
+    <string name="metric_hrv">VFC</string>
+    <string name="trend_not_enough">Guarde al menos 2 mediciones en este periodo para ver una tendencia.</string>
+    <string name="trend_summary">Mín %1$s · Prom %2$s · Máx %3$s</string>
+    <string name="duration_quick">Rápida (%d s)</string>
+    <string name="duration_hrv">VFC (%d s)</string>
+    <string name="duration_hint">Elija 60 s para la VFC y la frecuencia respiratoria.</string>
+    <string name="title_tremor">Temblor</string>
+    <string name="guide_tremor">Siéntese, sostenga el teléfono en la mano con el brazo extendido al frente y quédese lo más quieto posible durante %d segundos.</string>
+    <string name="tremor_info">Solo informativo: no existe un rango normal validado para el temblor medido con un teléfono.</string>
+    <string name="label_breathing">Respiración: %d /min</string>
+    <string name="metric_breathing">Respiración</string>
+    <string name="duration_breathing">Respiración (%d s)</string>
+    <string name="duration_hint_breathing">Elija 60 s para medir la frecuencia respiratoria.</string>
+    <string name="steps_today">Pasos de hoy</string>
+    <string name="btn_enable_steps">Activar</string>
+    <string name="steps_unavailable">Este dispositivo no tiene podómetro</string>
+    <string name="app_subtitle">Bioanálisis</string>
+    <string name="label_ppg_analysis">Análisis PPG</string>
+    <string name="label_scg">Sismocardiografía (SCG)</string>
+    <string name="label_rec">REC</string>
+    <string name="camera_active_flash">Cámara activa • Flash encendido</string>
+    <string name="optical_sensor_active">Sensor óptico activo</string>
+    <string name="cd_delete_measurement">Eliminar medición</string>
+    <string name="disclaimer_title">No es un dispositivo médico</string>
+    <string name="disclaimer_body">BioSense Log es una aplicación de bienestar y autoseguimiento. No es un dispositivo médico y no diagnostica, trata ni previene ninguna enfermedad.\n\nLos sensores del teléfono son menos precisos que el equipo médico, y los rangos de referencia mostrados son solo orientativos.\n\nNo utilice estas lecturas para tomar decisiones de salud. Si no se encuentra bien o le preocupa su salud, consulte a un médico. En caso de emergencia, llame al número de emergencias local.</string>
+    <string name="disclaimer_accept">Entendido</string>
+    <string name="disclaimer_footer">No es un dispositivo médico. Solo para bienestar y autoseguimiento, no para diagnóstico.</string>
+    <string name="welcome_title">Antes de empezar</string>
+    <string name="privacy_title">Sus datos se quedan en su teléfono</string>
+    <string name="privacy_body">Todas sus mediciones se guardan solo en este teléfono. BioSense Log no recopila ni envía nada: la aplicación no tiene acceso a Internet. Sus datos solo salen del teléfono si usted decide exportarlos o compartirlos.</string>
+    <string name="free_title">Gratuita</string>
+    <string name="free_body">BioSense Log es totalmente gratuita. Si le resulta útil, apóyela valorándola y dejando una reseña en Google Play, para que más personas puedan descubrirla.</string>
+    <string name="btn_rate_app">Valorar la app</string>
+    <string name="footer_privacy">Sus datos se quedan en su teléfono. No se recopila ni se envía nada.</string>
+    <string name="language_title">Idioma</string>
+    <string name="language_system">Idioma del teléfono</string>
+    <string name="cd_change_language">Cambiar idioma</string>
+</resources>

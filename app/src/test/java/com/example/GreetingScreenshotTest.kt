@@ -9,7 +9,10 @@ import com.example.ui.BiometricViewModel
 import com.example.ui.theme.MyApplicationTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Assume
 import org.junit.Rule
+import org.junit.rules.TestRule
+import org.junit.runners.model.Statement
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -21,7 +24,17 @@ import org.robolectric.annotation.GraphicsMode
 @Config(qualifiers = RobolectricDeviceQualifiers.Pixel8, sdk = [36])
 class GreetingScreenshotTest {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  /** The Compose test host activity only exists in developer builds: skip before it is launched. */
+  @get:Rule(order = 0) val developerBuildOnly = TestRule { base, _ ->
+    object : Statement() {
+      override fun evaluate() {
+        Assume.assumeTrue("needs the developer build's Compose test host", BuildConfig.DEBUG)
+        base.evaluate()
+      }
+    }
+  }
+
+  @get:Rule(order = 1) val composeTestRule = createComposeRule()
 
   @Test
   fun greeting_screenshot() {

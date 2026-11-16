@@ -1,0 +1,24 @@
+BioSense Log convierte los sensores de tu móvil en un sencillo diario de bienestar. Sin cuenta y sin acceso a internet: cada medición se queda en tu teléfono.
+
+QUÉ PUEDES MEDIR
+• Pulso: coloca la yema del dedo sobre la cámara y el flash. La app sigue los pequeños cambios de color que produce cada latido.
+• Variabilidad de la frecuencia cardiaca (VFC): RMSSD y SDNN, con un modo específico de 60 segundos.
+• Frecuencia respiratoria: a partir de la señal del pulso, o con el móvil apoyado en el pecho (sensor de movimiento).
+• Prueba de temblor: una prueba de 15 segundos que indica la amplitud y la frecuencia principal de los movimientos de la mano.
+• Los pasos del día, con el podómetro del móvil.
+
+SIGUE TUS TENDENCIAS
+• Historial con gráfico de tendencia y tu último resultado de un vistazo.
+• Borra una medición o vacía todo el historial.
+• Exporta tus mediciones como hoja de cálculo (CSV) o informe legible, para copiarlas o compartirlas cuando tú decidas.
+
+PRIVADA POR DISEÑO
+• La app no tiene permiso de internet: no puede enviar tus datos a ningún sitio.
+• Sin anuncios, sin estadísticas, sin rastreadores, sin cuenta.
+• Las mediciones quedan fuera de la copia de seguridad en la nube.
+
+DISPONIBLE EN 8 IDIOMAS
+Inglés, francés, español, alemán, portugués, chino, árabe e hindi. Cambia el idioma desde la propia app.
+
+IMPORTANTE
+BioSense Log es una app de bienestar y autoseguimiento. No es un producto sanitario y no diagnostica, trata ni previene ninguna enfermedad. Los sensores del móvil son menos precisos que un equipo médico. No uses estas mediciones para tomar decisiones de salud. Si te encuentras mal, consulta a un médico; en caso de emergencia, llama al número de emergencias local.

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BioSense Log</string>
+    <string name="title_blood_flow">تدفق الدم (PPG)</string>
+    <string name="title_chest_vibe">اهتزاز الصدر</string>
+    <string name="measurement_history">السجل الحيوي</string>
+    <string name="lbl_simulator">وضع المحاكاة</string>
+    <string name="lbl_hardware">مستشعر حقيقي</string>
+
+    <string name="btn_start">بدء القياس</string>
+    <string name="btn_stop">إيقاف</string>
+    <string name="btn_save">حفظ</string>
+    <string name="btn_clear_history">مسح السجل</string>
+
+    <string name="label_pulse">النبض: %d نبضة/د</string>
+    <string name="label_amplitude">السعة: %.1f%%</string>
+    <string name="label_vibration">الاهتزاز: %.3f م/ث²</string>
+
+    <string name="guide_finger_ppg">ضع طرف إصبع السبابة بشكل مسطح على عدسة الكاميرا الخلفية وغطِّ الفلاش.</string>
+    <string name="guide_vibe">استلقِ وضع الهاتف بشكل مسطح على منتصف صدرك.</string>
+    <string name="finger_not_detected">لم يتم اكتشاف الإصبع. يرجى تغطية عدسة الكاميرا والفلاش بالكامل.</string>
+    <string name="finger_detected">تم اكتشاف الإصبع! جارٍ تحليل نبض تدفق الدم...</string>
+    <string name="finger_status_too_dark">الإضاءة منخفضة جدًا. تأكد من تشغيل الفلاش وأن الإصبع يغطي الكاميرا.</string>
+    <string name="finger_status_too_bright">الإضاءة ساطعة جدًا. غطِّ العدسة جيدًا بطرف الإصبع.</string>
+    <string name="finger_status_adjust">غطِّ عدسة الكاميرا الخلفية والفلاش بالكامل بطرف الإصبع.</string>
+    <string name="test_simulate_finger">محاكاة لمس الإصبع (اختبار)</string>
+
+    <string name="camera_permission_denied">يلزم إذن الكاميرا لاستخدام مستشعر تدفق الدم البصري.</string>
+    <string name="btn_request_permission">منح إذن الكاميرا</string>
+
+    <string name="status_low">منخفض</string>
+    <string name="status_normal">طبيعي</string>
+    <string name="status_high">مرتفع</string>
+
+    <string name="limit_pulse">النبض (الحدود الطبيعية: 60 - 100 نبضة/د)</string>
+    <string name="limit_vibration">الاهتزاز (الحدود الطبيعية: 0.050 - 0.250 م/ث²)</string>
+    <string name="limit_volume" formatted="false">مؤشر التروية (الحدود الطبيعية: 1.0% - 4.5%)</string>
+
+    <string name="empty_history">لا توجد قياسات مسجلة في قاعدة البيانات بعد.</string>
+    <string name="last_measurement">آخر قياس</string>
+    <string name="show_history">عرض السجل (%d)</string>
+    <string name="hide_history">إخفاء السجل</string>
+    <string name="dialog_clear_history_title">مسح السجل؟</string>
+    <string name="dialog_clear_history_message">سيتم حذف جميع القياسات المحفوظة (%d) نهائيًا.</string>
+    <string name="toast_saved">تم حفظ القياس بنجاح!</string>
+    <string name="info_countdown">جارٍ المعايرة... متبقٍ %d ثانية</string>
+
+    <string name="tab_ppg">تدفق الدم (PPG)</string>
+    <string name="tab_vibe">اهتزاز الصدر (SCG)</string>
+    <string name="unit_bpm">نبضة/د</string>
+
+    <string name="abnormal_test">محاكاة قيم غير طبيعية</string>
+    <string name="normal_test">العودة إلى القيم الطبيعية</string>
+
+    <string name="tip_title_finger_placement">كيف تضع إصبعك؟</string>
+    <string name="tip_camera_choice">1. الكاميرا الرئيسية: غطِّ عدسة الكاميرا الخلفية الرئيسية (عادةً العدسة العلوية).</string>
+    <string name="tip_flash_coverage">2. فلاش LED: يجب أن يضيء الفلاش طرف الإصبع لتتوهج الشعيرات الدموية باللون الأحمر.</string>
+    <string name="tip_gentle_pressure">3. ضغط خفيف: ضع إصبعك برفق. الضغط الشديد يقطع تدفق الدم في الشعيرات.</string>
+    <string name="tip_keep_still">4. الثبات: أبقِ إصبعك ثابتًا حتى ينتهي القياس.</string>
+
+    <string name="btn_close_app">إغلاق التطبيق</string>
+    <string name="dialog_close_title">إغلاق التطبيق؟</string>
+    <string name="dialog_close_message">هل أنت متأكد أنك تريد الخروج من BioSense Log؟</string>
+    <string name="dialog_cancel">إلغاء</string>
+    <string name="dialog_confirm_exit">خروج</string>
+
+    <string name="btn_export">تصدير</string>
+    <string name="dialog_export_title">تصدير القياسات</string>
+    <string name="export_format_csv">CSV (جدول بيانات)</string>
+    <string name="export_format_report">تقرير موجز</string>
+    <string name="btn_share_export">مشاركة</string>
+    <string name="btn_copy_export">نسخ</string>
+    <string name="toast_copied">تم النسخ إلى الحافظة!</string>
+    <string name="export_chooser_title">تصدير بيانات BioSense</string>
+    <string name="export_record_count">%d قياسات • BioSense Log</string>
+    <string name="label_hrv">تقلب نبض القلب: %d مللي ثانية</string>
+    <string name="trend_title">الاتجاه</string>
+    <string name="range_7d">7 أيام</string>
+    <string name="range_30d">30 يومًا</string>
+    <string name="range_all">الكل</string>
+    <string name="metric_primary">النبض</string>
+    <string name="metric_hrv">HRV</string>
+    <string name="trend_not_enough">احفظ قياسين على الأقل في هذه الفترة لعرض الاتجاه.</string>
+    <string name="trend_summary">الأدنى %1$s · المتوسط %2$s · الأعلى %3$s</string>
+    <string name="duration_quick">سريع (%d ث)</string>
+    <string name="duration_hrv">HRV (%d ث)</string>
+    <string name="duration_hint">اختر 60 ثانية لقياس تقلب نبض القلب ومعدل التنفس.</string>
+    <string name="title_tremor">رعشة اليد</string>
+    <string name="guide_tremor">اجلس وأمسك الهاتف بيدك مع مد ذراعك أمامك، وابقَ ثابتًا قدر الإمكان لمدة %d ثانية.</string>
+    <string name="tremor_info">للعلم فقط: لا يوجد نطاق طبيعي معتمد للرعشة المقاسة بالهاتف.</string>
+    <string name="label_breathing">التنفس: %d /د</string>
+    <string name="metric_breathing">التنفس</string>
+    <string name="duration_breathing">التنفس (%d ث)</string>
+    <string name="duration_hint_breathing">اختر 60 ثانية لقياس معدل التنفس.</string>
+    <string name="steps_today">خطوات اليوم</string>
+    <string name="btn_enable_steps">تفعيل</string>
+    <string name="steps_unavailable">لا يوجد عداد خطوات في هذا الجهاز</string>
+    <string name="app_subtitle">تحليل حيوي</string>
+    <string name="label_ppg_analysis">تحليل PPG</string>
+    <string name="label_scg">تخطيط اهتزاز القلب (SCG)</string>
+    <string name="label_rec">تسجيل</string>
+    <string name="camera_active_flash">الكاميرا نشطة • الفلاش مضاء</string>
+    <string name="optical_sensor_active">المستشعر البصري نشط</string>
+    <string name="cd_delete_measurement">حذف القياس</string>
+    <string name="disclaimer_title">ليس جهازًا طبيًا</string>
+    <string name="disclaimer_body">BioSense Log تطبيق للعافية والمتابعة الذاتية. وهو ليس جهازًا طبيًا ولا يشخّص أي مرض أو يعالجه أو يقي منه.\n\nمستشعرات الهاتف أقل دقة من المعدات الطبية، والنطاقات المرجعية المعروضة إرشادية فقط.\n\nلا تستخدم هذه القراءات لاتخاذ قرارات صحية. إذا شعرت بتوعك أو كنت قلقًا بشأن صحتك، فاستشر طبيبًا. في حالات الطوارئ، اتصل برقم الطوارئ المحلي.</string>
+    <string name="disclaimer_accept">فهمت</string>
+    <string name="disclaimer_footer">ليس جهازًا طبيًا. للعافية والمتابعة الذاتية فقط، وليس للتشخيص.</string>
+    <string name="welcome_title">قبل أن تبدأ</string>
+    <string name="privacy_title">بياناتك تبقى على هاتفك</string>
+    <string name="privacy_body">تُحفظ جميع قياساتك على هذا الهاتف فقط. لا يجمع BioSense Log أي بيانات ولا يرسل أي شيء: لا يملك التطبيق إذنًا للوصول إلى الإنترنت. لا تغادر بياناتك الهاتف إلا إذا اخترت أنت تصديرها أو مشاركتها.</string>
+    <string name="free_title">مجاني</string>
+    <string name="free_body">BioSense Log مجاني بالكامل. إذا وجدته مفيدًا، فادعمه بتقييمه وكتابة مراجعة على Google Play، ليتمكن المزيد من الناس من اكتشافه.</string>
+    <string name="btn_rate_app">قيّم التطبيق</string>
+    <string name="footer_privacy">بياناتك تبقى على هاتفك. لا يتم جمع أي شيء أو إرساله.</string>
+    <string name="language_title">اللغة</string>
+    <string name="language_system">لغة الهاتف</string>
+    <string name="cd_change_language">تغيير اللغة</string>
+</resources>

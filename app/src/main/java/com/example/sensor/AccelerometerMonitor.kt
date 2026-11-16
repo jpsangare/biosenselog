@@ -7,8 +7,15 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import kotlin.math.sqrt
 
+/**
+ * @param samplingPeriod a SensorManager.SENSOR_DELAY_* value. The vibration filters are tuned
+ *   for SENSOR_DELAY_UI (~16 Hz); tremor needs SENSOR_DELAY_GAME (~50 Hz) to resolve up to 15 Hz.
+ * @param onRawSample raw x, y, z (m/s², gravity included) with the capture time in ms.
+ */
 class AccelerometerMonitor(
     context: Context,
+    private val samplingPeriod: Int = SensorManager.SENSOR_DELAY_UI,
+    private val onRawSample: (x: Float, y: Float, z: Float, timestampMs: Long) -> Unit = { _, _, _, _ -> },
     private val onVibrationUpdate: (rms: Double, waveform: List<Float>) -> Unit
 ) : SensorEventListener {
 
@@ -33,7 +40,7 @@ class AccelerometerMonitor(
 
     fun start() {
         accelerometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            sensorManager.registerListener(this, it, samplingPeriod)
         }
     }
 
@@ -53,6 +60,7 @@ class AccelerometerMonitor(
         val sx = event.values[0]
         val sy = event.values[1]
         val sz = event.values[2]
+        onRawSample(sx, sy, sz, event.timestamp / 1_000_000) // sensor clock: precise sample spacing
 
         // Track gravity vector using dynamic low pass
         gx = alpha * gx + (1 - alpha) * sx

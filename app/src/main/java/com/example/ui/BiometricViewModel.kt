@@ -1,6 +1,10 @@
 package com.example.ui
 
 import android.app.Application
+import androidx.annotation.VisibleForTesting
+import androidx.core.content.edit
+import com.example.BuildConfig
+import android.hardware.SensorManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +13,14 @@ import com.example.data.BiometricRecord
 import com.example.data.BiometricRepository
 import com.example.sensor.AccelerometerMonitor
 import com.example.sensor.FingerDetectionStatus
+import com.example.sensor.HrvCalculator
+import com.example.sensor.HrvMetrics
+import com.example.sensor.PpgBeatDetector
+import com.example.sensor.RespirationDetector
+import com.example.sensor.StepCounterMonitor
+import com.example.sensor.TremorAnalyzer
+import com.example.sensor.TremorResult
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.sqrt
@@ -37,29 +50,45 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
             initialValue = emptyList()
         )
 
-    // Mode: "PPG" or "VIBRATION"
+    // Mode: "PPG", "VIBRATION" or "TREMOR"
     private val _currentTab = MutableStateFlow("PPG")
     val currentTab: StateFlow<String> = _currentTab.asStateFlow()
 
-    // Simulator Toggle
-    private val _isSimulatorEnabled = MutableStateFlow(true)
+    // Today's steps from the step counter; null until it reports (or when unavailable).
+    private val _todaySteps = MutableStateFlow<Long?>(null)
+    val todaySteps: StateFlow<Long?> = _todaySteps.asStateFlow()
+    private var stepCounterMonitor: StepCounterMonitor? = null
+
+    // Simulator: developer builds only. Store builds always use the real sensors, so users never
+    // see or save made-up readings.
+    private val _isSimulatorEnabled = MutableStateFlow(SIMULATOR_ALLOWED)
     val isSimulatorEnabled: StateFlow<Boolean> = _isSimulatorEnabled.asStateFlow()
 
     // Measurement activity
     private val _isMeasuring = MutableStateFlow(false)
     val isMeasuring: StateFlow<Boolean> = _isMeasuring.asStateFlow()
 
-    private val _countdown = MutableStateFlow(10) // 10 seconds test
+    // Selected duration for PPG and chest measurements: quick 10 s, or 60 s for HRV and breathing rate.
+    // The tremor test always lasts TREMOR_DURATION_SEC.
+    private val _measurementDurationSec = MutableStateFlow(QUICK_DURATION_SEC)
+    val measurementDurationSec: StateFlow<Int> = _measurementDurationSec.asStateFlow()
+
+    // Length of the measurement in progress (or of the next one), drives the progress bar.
+    private val _measurementTotalSec = MutableStateFlow(QUICK_DURATION_SEC)
+    val measurementTotalSec: StateFlow<Int> = _measurementTotalSec.asStateFlow()
+
+    private val _countdown = MutableStateFlow(QUICK_DURATION_SEC)
     val countdown: StateFlow<Int> = _countdown.asStateFlow()
 
     // Live state values
-    private val _liveBPM = MutableStateFlow(72)
+    // Real-sensor mode starts empty (0 = no reading yet); the simulator starts at resting values.
+    private val _liveBPM = MutableStateFlow(if (SIMULATOR_ALLOWED) 72 else 0)
     val liveBPM: StateFlow<Int> = _liveBPM.asStateFlow()
 
-    private val _liveBloodVolume = MutableStateFlow(2.4) // Blood flow amplitude %
+    private val _liveBloodVolume = MutableStateFlow(if (SIMULATOR_ALLOWED) 2.4 else 0.0) // Blood flow amplitude %
     val liveBloodVolume: StateFlow<Double> = _liveBloodVolume.asStateFlow()
 
-    private val _liveVibeRMS = MutableStateFlow(0.12) // Chest vibration RMS m/s^2
+    private val _liveVibeRMS = MutableStateFlow(if (SIMULATOR_ALLOWED) 0.12 else 0.0) // Chest vibration RMS m/s^2
     val liveVibeRMS: StateFlow<Double> = _liveVibeRMS.asStateFlow()
 
     // Live wave lists for drawing moving graphs
@@ -95,21 +124,64 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
     private val ppgTimestampHistory = mutableListOf<Long>()
     private val maxPPGHistorySize = 90 // Approx 3 seconds at 30 fps for responsive tracking
 
+    // Full-length recording of the current measurement (camera and accelerometer), analysed when it ends.
+    // Written from sensor threads, read when saving: guarded by recordingLock.
+    private val recordingLock = Any()
+    private val cameraValues = mutableListOf<Double>()
+    private val cameraTimes = mutableListOf<Long>()
+    private val accelX = mutableListOf<Double>()
+    private val accelY = mutableListOf<Double>()
+    private val accelZ = mutableListOf<Double>()
+    private val accelTimes = mutableListOf<Long>()
+    private val maxCameraSamples = (LONG_DURATION_SEC + 10) * 30 // longest measurement at 30 fps, plus margin
+    private val maxAccelSamples = (LONG_DURATION_SEC + 10) * 60  // longest measurement at up to 60 Hz
+
     private val bpmLock = Any()
-    private var displayedBpmFloat = 72.0
-    private var displayedVolumeFloat = 2.4
+    private var displayedBpmFloat = _liveBPM.value.toDouble()
+    private var displayedVolumeFloat = _liveBloodVolume.value
     private var simulatedTargetBpm = 72.0
 
+    // "Not a medical device" notice: must be accepted once before measuring.
+    private val prefs = application.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+    private val _isDisclaimerAccepted = MutableStateFlow(prefs.getBoolean(KEY_DISCLAIMER_ACCEPTED, false))
+    val isDisclaimerAccepted: StateFlow<Boolean> = _isDisclaimerAccepted.asStateFlow()
+
+    fun acceptDisclaimer() {
+        prefs.edit { putBoolean(KEY_DISCLAIMER_ACCEPTED, true) }
+        _isDisclaimerAccepted.value = true
+    }
+
     init {
-        // Start simulation by default so the preview or streaming emulator immediately displays active waveforms
-        startSimulation()
+        if (_isSimulatorEnabled.value) startSimulation() else startHardwareSensors()
     }
 
     fun setTab(tabName: String) {
+        if (_isMeasuring.value) stopMeasurement()
+        val ratesDiffer = (tabName == "TREMOR") != (_currentTab.value == "TREMOR")
         _currentTab.value = tabName
+        // Tremor needs a faster accelerometer rate than the chest vibration filters are tuned for.
+        if (ratesDiffer && !_isSimulatorEnabled.value) {
+            stopHardwareSensors()
+            startHardwareSensors()
+        }
     }
 
+    fun setMeasurementDuration(seconds: Int) {
+        if (_isMeasuring.value) return
+        _measurementDurationSec.value = seconds
+    }
+
+    /** Starts today's step count; call once the activity permission is granted. */
+    fun startStepCounter() {
+        if (stepCounterMonitor != null) return
+        if (!isStepCounterAvailable) return
+        stepCounterMonitor = StepCounterMonitor(getApplication()) { _todaySteps.value = it }.also { it.start() }
+    }
+
+    val isStepCounterAvailable: Boolean = StepCounterMonitor.isAvailable(application)
+
     fun setSimulatorEnabled(enabled: Boolean) {
+        if (enabled && !SIMULATOR_ALLOWED) return
         _isSimulatorEnabled.value = enabled
         if (enabled) {
             setSimulatedFingerTouch(false)
@@ -125,6 +197,7 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Allows simulating realistic fingertip pulse wave directly on the real-sensor pipeline (ideal for emulator/testing)
     fun setSimulatedFingerTouch(enabled: Boolean) {
+        if (enabled && !SIMULATOR_ALLOWED) return
         _isSimulatedFingerTouch.value = enabled
         simulatedFingerJob?.cancel()
         if (enabled && !_isSimulatorEnabled.value) {
@@ -152,6 +225,7 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Toggle simulation details or change parameters to simulate abnormal values if needed
     fun triggerAbnormalSimulate(abnormal: Boolean) {
+        if (!SIMULATOR_ALLOWED) return
         val targetBpm = if (abnormal) 115 else 72
         val targetVolume = if (abnormal) 5.2 else 2.4
         val targetVibe = if (abnormal) 0.45 else 0.12
@@ -238,6 +312,13 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /**
+     * UI tests only: stops the simulator's 20-per-second live updates (keeping the current values)
+     * so the screen can become idle between test steps. Measurements still work.
+     */
+    @VisibleForTesting
+    fun freezeSimulationForTests() = stopSimulation()
+
     private fun stopSimulation() {
         simulationJob?.cancel()
         simulationJob = null
@@ -245,7 +326,12 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun startHardwareSensors() {
         // Start Accelerometer listener
-        accelerometerMonitor = AccelerometerMonitor(getApplication()) { rms, waveform ->
+        val rate = if (_currentTab.value == "TREMOR") SensorManager.SENSOR_DELAY_GAME else SensorManager.SENSOR_DELAY_UI
+        accelerometerMonitor = AccelerometerMonitor(
+            getApplication(),
+            samplingPeriod = rate,
+            onRawSample = ::onAccelerometerSample
+        ) { rms, waveform ->
             if (!_isSimulatorEnabled.value) {
                 _liveVibeRMS.value = rms
                 _vibeWaveform.value = waveform
@@ -259,15 +345,29 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
         accelerometerMonitor = null
     }
 
+    /** Raw accelerometer sample from AccelerometerMonitor (tests call it directly with synthetic data). */
+    @VisibleForTesting
+    internal fun onAccelerometerSample(x: Float, y: Float, z: Float, timestampMs: Long) {
+        if (!_isMeasuring.value || _currentTab.value == "PPG") return
+        synchronized(recordingLock) {
+            if (accelTimes.size < maxAccelSamples) {
+                accelX.add(x.toDouble())
+                accelY.add(y.toDouble())
+                accelZ.add(z.toDouble())
+                accelTimes.add(timestampMs)
+            }
+        }
+    }
+
     // Capture incoming camera pixel analysis
     fun onCameraFrameUpdated(
         luminance: Double,
         isFingerPresent: Boolean,
-        status: FingerDetectionStatus = FingerDetectionStatus.NONE
+        status: FingerDetectionStatus = FingerDetectionStatus.NONE,
+        currentTime: Long = System.currentTimeMillis() // capture time; tests pass synthetic timestamps
     ) {
         if (_isSimulatorEnabled.value) return // Ignore if simulator is running
 
-        val currentTime = System.currentTimeMillis()
         _fingerStatus.value = status
 
         // If finger is present, process raw signals
@@ -282,6 +382,15 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
             if (ppgValueHistory.size > maxPPGHistorySize) {
                 ppgValueHistory.removeAt(0)
                 ppgTimestampHistory.removeAt(0)
+            }
+
+            if (_isMeasuring.value) {
+                synchronized(recordingLock) {
+                    if (cameraValues.size < maxCameraSamples) {
+                        cameraValues.add(luminance)
+                        cameraTimes.add(currentTime)
+                    }
+                }
             }
 
             // Expose detrended and smoothed AC values to the live waveform plot
@@ -323,138 +432,35 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun calculateBpmFromHistory() {
-        val y = ppgValueHistory.toList()
-        val t = ppgTimestampHistory.toList()
-        if (y.size < 12) return
+        val analysis = PpgBeatDetector.analyze(ppgValueHistory.toList(), ppgTimestampHistory.toList()) ?: return
+        val instantBpm = analysis.bpm
 
-        // 1. Moving baseline subtraction (detrending) to eliminate slow respiratory drift
-        val windowSize = minOf(16, y.size / 2)
-        val detrended = mutableListOf<Double>()
-        for (i in y.indices) {
-            val start = maxOf(0, i - windowSize / 2)
-            val end = minOf(y.size - 1, i + windowSize / 2)
-            var sum = 0.0
-            for (j in start..end) sum += y[j]
-            val localBase = sum / (end - start + 1)
-            detrended.add(y[i] - localBase)
-        }
-
-        // 2. 3-point binomial smoothing [0.25, 0.5, 0.25] to filter out sensor high-frequency noise
-        val smoothed = mutableListOf<Double>()
-        for (i in detrended.indices) {
-            val prev = if (i > 0) detrended[i - 1] else detrended[i]
-            val curr = detrended[i]
-            val next = if (i < detrended.size - 1) detrended[i + 1] else detrended[i]
-            smoothed.add(0.25 * prev + 0.50 * curr + 0.25 * next)
-        }
-
-        val maxL = smoothed.maxOrNull() ?: 0.0
-        val minL = smoothed.minOrNull() ?: 0.0
-        val peakToPeak = maxL - minL
-
-        // Only search for peaks if signal has real physiological pulse variation
-        if (peakToPeak >= 0.35) {
-            // Systolic peak threshold: 50% of peak height
-            // This strictly rejects the secondary dicrotic wave (typically 30-40% height)
-            val peakThreshold = maxOf(0.20, maxL * 0.50)
-            val rawPeaks = mutableListOf<Int>()
-            for (i in 2 until smoothed.size - 2) {
-                val center = smoothed[i]
-                if (center > peakThreshold &&
-                    center >= smoothed[i - 1] && center >= smoothed[i - 2] &&
-                    center >= smoothed[i + 1] && center >= smoothed[i + 2]
-                ) {
-                    rawPeaks.add(i)
-                }
+        synchronized(bpmLock) {
+            // Adaptive display filter: fast response on step changes, stability on minor noise
+            if (_liveBPM.value <= 35) {
+                displayedBpmFloat = instantBpm
+                _liveBPM.value = instantBpm.toInt()
+            } else {
+                val diff = instantBpm - displayedBpmFloat
+                val alpha = if (kotlin.math.abs(diff) > 7.0) 0.50 else 0.22
+                displayedBpmFloat += alpha * diff
+                _liveBPM.value = kotlin.math.round(displayedBpmFloat).toInt()
             }
 
-            // 3. Sub-frame parabolic interpolation for exact peak timestamps
-            val peakExactTimestamps = mutableListOf<Double>()
-            for (pIdx in rawPeaks) {
-                val y1 = smoothed[pIdx - 1]
-                val y2 = smoothed[pIdx]
-                val y3 = smoothed[pIdx + 1]
-                val denom = 2.0 * (y1 - 2.0 * y2 + y3)
-                val delta = if (denom != 0.0) ((y1 - y3) / denom).coerceIn(-0.5, 0.5) else 0.0
-                val dt = if (pIdx > 0) (t[pIdx] - t[pIdx - 1]).toDouble() else 33.3
-                val exactTime = t[pIdx].toDouble() + delta * dt
-
-                if (peakExactTimestamps.isEmpty()) {
-                    peakExactTimestamps.add(exactTime)
-                } else {
-                    val lastTime = peakExactTimestamps.last()
-                    val gap = exactTime - lastTime
-                    // Minimum refractory period 360ms (max ~166 BPM) to block any dicrotic notch
-                    if (gap >= 360.0) {
-                        peakExactTimestamps.add(exactTime)
-                    }
-                }
-            }
-
-            // 4. Extract consecutive beat-to-beat intervals
-            if (peakExactTimestamps.size >= 2) {
-                val intervals = mutableListOf<Double>()
-                for (p in 0 until peakExactTimestamps.size - 1) {
-                    val gap = peakExactTimestamps[p + 1] - peakExactTimestamps[p]
-                    // Physiological pulse interval limits: 375ms (160 BPM) to 1350ms (44 BPM)
-                    if (gap in 375.0..1350.0) {
-                        intervals.add(gap)
-                    }
-                }
-
-                if (intervals.isNotEmpty()) {
-                    // Recency-weighted average of the most recent intervals:
-                    // The latest beat carries up to 50% weight, so changes in pulse rate
-                    // are detected promptly (within 1-2 beats) without sluggish lag!
-                    val recentCount = minOf(4, intervals.size)
-                    val subList = intervals.takeLast(recentCount)
-                    val weights = when (recentCount) {
-                        1 -> listOf(1.0)
-                        2 -> listOf(0.35, 0.65)
-                        3 -> listOf(0.20, 0.30, 0.50)
-                        else -> listOf(0.10, 0.20, 0.30, 0.40)
-                    }
-                    var weightedSum = 0.0
-                    var weightSum = 0.0
-                    for (k in subList.indices) {
-                        weightedSum += subList[k] * weights[k]
-                        weightSum += weights[k]
-                    }
-                    val weightedGap = weightedSum / weightSum
-                    val instantBpm = 60000.0 / weightedGap
-
-                    if (instantBpm in 44.0..160.0) {
-                        synchronized(bpmLock) {
-                            // Adaptive display filter:
-                            // Fast response on step changes, silky stability on minor noise
-                            if (_liveBPM.value <= 35) {
-                                displayedBpmFloat = instantBpm
-                                _liveBPM.value = instantBpm.toInt()
-                            } else {
-                                val diff = instantBpm - displayedBpmFloat
-                                val alpha = if (kotlin.math.abs(diff) > 7.0) 0.50 else 0.22
-                                displayedBpmFloat += alpha * diff
-                                _liveBPM.value = kotlin.math.round(displayedBpmFloat).toInt()
-                            }
-
-                            // Smooth perfusion index / volume amplitude
-                            val meanVal = y.average().coerceAtLeast(1.0)
-                            val rawAmp = (peakToPeak / meanVal) * 100.0
-                            val clampedAmp = rawAmp.coerceIn(0.8, 6.0)
-                            displayedVolumeFloat += 0.25 * (clampedAmp - displayedVolumeFloat)
-                            _liveBloodVolume.value = kotlin.math.round(displayedVolumeFloat * 10.0) / 10.0
-                        }
-                    }
-                }
-            }
+            // Smooth perfusion index / volume amplitude
+            displayedVolumeFloat += 0.25 * (analysis.perfusionPercent - displayedVolumeFloat)
+            _liveBloodVolume.value = kotlin.math.round(displayedVolumeFloat * 10.0) / 10.0
         }
     }
 
     // Start 10 seconds measurement test
     fun startMeasurementSecured() {
         if (_isMeasuring.value) return
+        clearRecording()
+        val duration = if (_currentTab.value == "TREMOR") TREMOR_DURATION_SEC else _measurementDurationSec.value
+        _measurementTotalSec.value = duration
         _isMeasuring.value = true
-        _countdown.value = 10
+        _countdown.value = duration
 
         measurementJob = viewModelScope.launch {
             while (_countdown.value > 0) {
@@ -472,7 +478,7 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
 
             // Countdown done! Stop measurement and auto-save current stable readings to DB
             _isMeasuring.value = false
-            logCurrentReadingToDb()
+            saveReading(takeRecording(duration))
         }
     }
 
@@ -480,54 +486,126 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
         measurementJob?.cancel()
         measurementJob = null
         _isMeasuring.value = false
+        clearRecording()
     }
 
+    private fun clearRecording() = synchronized(recordingLock) {
+        cameraValues.clear()
+        cameraTimes.clear()
+        accelX.clear()
+        accelY.clear()
+        accelZ.clear()
+        accelTimes.clear()
+    }
+
+    /** Sensor data of a finished measurement (empty lists in the simulator). */
+    private class Recording(
+        val durationSec: Int,
+        val camera: List<Double>,
+        val cameraTimes: List<Long>,
+        val accel: List<List<Double>>,
+        val accelTimes: List<Long>
+    )
+
+    private fun takeRecording(durationSec: Int): Recording = synchronized(recordingLock) {
+        Recording(
+            durationSec,
+            cameraValues.toList(), cameraTimes.toList(),
+            listOf(accelX.toList(), accelY.toList(), accelZ.toList()), accelTimes.toList()
+        )
+    }.also { clearRecording() }
+
+    private val simulatedAbnormal: Boolean get() = simulatedTargetBpm > 100
+
+    /** HRV from the camera recording, or plausible simulated values (lower when the heart rate is high). */
+    private fun measurementHrv(recording: Recording?): HrvMetrics? {
+        if (recording == null) return null
+        if (_isSimulatorEnabled.value) {
+            val rmssd = if (simulatedAbnormal) 12.0 + Math.random() * 8.0 else 30.0 + Math.random() * 20.0
+            return HrvMetrics(rmssd, rmssd * (1.1 + Math.random() * 0.3), 0)
+        }
+        return HrvCalculator.compute(PpgBeatDetector.beatIntervalsInWindows(recording.camera, recording.cameraTimes))
+    }
+
+    /** Breathing rate of a long measurement, from the finger camera or the chest accelerometer. */
+    private fun measurementBreathing(recording: Recording?, type: String): Double? {
+        if (recording == null || recording.durationSec < LONG_DURATION_SEC) return null
+        if (_isSimulatorEnabled.value) {
+            return if (simulatedAbnormal) 22.0 + Math.random() * 4.0 else 12.0 + Math.random() * 6.0
+        }
+        return if (type == "PPG") RespirationDetector.estimate(recording.camera, recording.cameraTimes)
+        else RespirationDetector.estimateFromAxes(recording.accel, recording.accelTimes)
+    }
+
+    private fun measurementTremor(recording: Recording?): TremorResult? {
+        if (recording == null) return null
+        if (_isSimulatorEnabled.value) {
+            return if (simulatedAbnormal) TremorResult(0.35 + Math.random() * 0.15, 4.5 + Math.random())
+            else TremorResult(0.04 + Math.random() * 0.04, 8.5 + Math.random() * 3.0)
+        }
+        val (x, y, z) = recording.accel
+        return TremorAnalyzer.analyze(x, y, z, recording.accelTimes)
+    }
+
+    /** Save button: stores the live reading now. Recording-based metrics need a full measurement. */
+    fun logCurrentReadingToDb() = saveReading(null)
+
     // Save actual/simulated readings directly into SQLite room database
-    fun logCurrentReadingToDb() {
+    private fun saveReading(recording: Recording?) {
         viewModelScope.launch {
-            val type = _currentTab.value // "PPG" or "VIBRATION"
-            val value: Double
-            val secondaryValue: Double
-            val status: String
-
-            if (type == "PPG") {
-                val bpm = _liveBPM.value.toDouble()
-                if (bpm <= 35.0) {
-                    Log.d("BiometricViewModel", "Skipping log: No valid heart rate pulse recorded.")
-                    return@launch
+            val type = _currentTab.value
+            val record = when (type) {
+                "PPG" -> {
+                    val bpm = _liveBPM.value.toDouble()
+                    if (bpm <= 35.0) {
+                        Log.d("BiometricViewModel", "Skipping log: No valid heart rate pulse recorded.")
+                        return@launch
+                    }
+                    val (hrv, breathing) = withContext(Dispatchers.Default) {
+                        measurementHrv(recording) to measurementBreathing(recording, type)
+                    }
+                    BiometricRecord(
+                        type = type,
+                        value = bpm,
+                        secondaryValue = _liveBloodVolume.value,
+                        status = when {
+                            bpm < 60.0 -> "LOW"
+                            bpm <= 100.0 -> "NORMAL"
+                            else -> "HIGH"
+                        },
+                        rmssdMs = hrv?.rmssdMs,
+                        sdnnMs = hrv?.sdnnMs,
+                        respiratoryRate = breathing
+                    )
                 }
-                value = bpm
-                secondaryValue = _liveBloodVolume.value
-
-                // Determine normal limit status
-                status = when {
-                    bpm < 60.0 -> "LOW"
-                    bpm <= 100.0 -> "NORMAL"
-                    else -> "HIGH"
+                "TREMOR" -> {
+                    val tremor = withContext(Dispatchers.Default) { measurementTremor(recording) }
+                    if (tremor == null) {
+                        Log.d("BiometricViewModel", "Skipping log: tremor needs a full, steady measurement.")
+                        return@launch
+                    }
+                    // No validated normal range for phone-measured tremor: stored as information only.
+                    BiometricRecord(type = type, value = tremor.amplitudeRms, secondaryValue = tremor.dominantHz, status = "INFO")
                 }
-            } else {
-                val vibe = _liveVibeRMS.value
-                value = vibe
-                secondaryValue = 0.0
-
-                // Determine normal chest vibe limits
-                status = when {
-                    vibe < 0.05 -> "LOW"
-                    vibe <= 0.25 -> "NORMAL"
-                    else -> "HIGH"
+                else -> {
+                    val vibe = _liveVibeRMS.value
+                    val breathing = withContext(Dispatchers.Default) { measurementBreathing(recording, type) }
+                    BiometricRecord(
+                        type = type,
+                        value = vibe,
+                        secondaryValue = 0.0,
+                        status = when {
+                            vibe < 0.05 -> "LOW"
+                            vibe <= 0.25 -> "NORMAL"
+                            else -> "HIGH"
+                        },
+                        respiratoryRate = breathing
+                    )
                 }
             }
-
-            // Save
-            val record = BiometricRecord(
-                type = type,
-                value = value,
-                secondaryValue = secondaryValue,
-                status = status,
-                timestamp = System.currentTimeMillis()
-            )
             repository.insertRecord(record)
-            Log.d("BiometricViewModel", "Logged Biometric record to database: $record")
+            // Health values are never written to the system log in store builds.
+            if (BuildConfig.DEBUG) Log.d("BiometricViewModel", "Logged Biometric record to database: $record")
         }
     }
 
@@ -545,17 +623,19 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun generateCsvExport(records: List<BiometricRecord>): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        fun num(v: Double?, pattern: String) = v?.let { String.format(Locale.US, pattern, it) } ?: ""
         val sb = StringBuilder()
-        sb.append("ID,Timestamp,Date Time,Sensor Type,Value,Unit,Secondary Value,Status,Notes\n")
+        sb.append("ID,Timestamp,Date Time,Sensor Type,Value,Unit,Secondary Value,Status,HRV RMSSD (ms),HRV SDNN (ms),Breathing Rate (breaths/min),Notes\n")
         records.forEach { record ->
             val dateStr = sdf.format(Date(record.timestamp))
-            val isPpg = record.type == "BLOOD_FLOW"
-            val typeLabel = if (isPpg) "Blood Flow (PPG)" else "Chest Vibration (SCG)"
-            val primaryVal = if (isPpg) "${record.value.toInt()}" else String.format(Locale.US, "%.3f", record.value)
-            val unit = if (isPpg) "BPM" else "m/s²"
-            val secondaryVal = if (isPpg) String.format(Locale.US, "%.1f%%", record.secondaryValue) else "N/A"
+            val (typeLabel, primaryVal, unit, secondaryVal) = when (record.type) {
+                "PPG" -> listOf("Blood Flow (PPG)", "${record.value.toInt()}", "BPM", String.format(Locale.US, "%.1f%%", record.secondaryValue))
+                "TREMOR" -> listOf("Hand Tremor", num(record.value, "%.3f"), "m/s²", String.format(Locale.US, "%.1f Hz", record.secondaryValue))
+                else -> listOf("Chest Vibration (SCG)", num(record.value, "%.3f"), "m/s²", "N/A")
+            }
             val notesEscaped = record.notes.replace("\"", "\"\"")
-            sb.append("${record.id},${record.timestamp},\"$dateStr\",\"$typeLabel\",$primaryVal,\"$unit\",\"$secondaryVal\",${record.status},\"$notesEscaped\"\n")
+            sb.append("${record.id},${record.timestamp},\"$dateStr\",\"$typeLabel\",$primaryVal,\"$unit\",\"$secondaryVal\",${record.status}," +
+                "${num(record.rmssdMs, "%.1f")},${num(record.sdnnMs, "%.1f")},${num(record.respiratoryRate, "%.1f")},\"$notesEscaped\"\n")
         }
         return sb.toString()
     }
@@ -563,48 +643,86 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
     fun generateReportExport(records: List<BiometricRecord>): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         val sb = StringBuilder()
+        fun appendBreathing(group: List<BiometricRecord>) {
+            val rates = group.mapNotNull { it.respiratoryRate }
+            if (rates.isNotEmpty()) {
+                sb.append(String.format(Locale.getDefault(), "Average breathing rate: %.0f breaths/min (%d measurements)\n",
+                    rates.average(), rates.size))
+            }
+        }
         sb.append("========================================\n")
-        sb.append("     BIOSENSE LOG - RAPPORT BIOMETRIQUE\n")
+        sb.append("     BIOSENSE LOG - BIOMETRIC REPORT\n")
         sb.append("========================================\n")
-        sb.append("Date d'export : ${sdf.format(Date())}\n")
-        sb.append("Nombre total de mesures : ${records.size}\n\n")
+        sb.append("Export date: ${sdf.format(Date())}\n")
+        sb.append("Total measurements: ${records.size}\n\n")
 
-        val ppgRecords = records.filter { it.type == "BLOOD_FLOW" }
+        val ppgRecords = records.filter { it.type == "PPG" }
         if (ppgRecords.isNotEmpty()) {
             val avgBpm = ppgRecords.map { it.value }.average()
             val minBpm = ppgRecords.minOf { it.value }
             val maxBpm = ppgRecords.maxOf { it.value }
             val avgVolume = ppgRecords.map { it.secondaryValue }.average()
-            sb.append("--- FLUX SANGUIN (PPG) ---\n")
-            sb.append("Mesures : ${ppgRecords.size}\n")
-            sb.append("Pouls moyen : ${avgBpm.toInt()} BPM (Min: ${minBpm.toInt()}, Max: ${maxBpm.toInt()})\n")
-            sb.append(String.format(Locale.getDefault(), "Indice perfusion moyen : %.1f%%\n\n", avgVolume))
+            sb.append("--- BLOOD FLOW (PPG) ---\n")
+            sb.append("Measurements: ${ppgRecords.size}\n")
+            sb.append("Average pulse: ${avgBpm.toInt()} BPM (Min: ${minBpm.toInt()}, Max: ${maxBpm.toInt()})\n")
+            sb.append(String.format(Locale.getDefault(), "Average perfusion index: %.1f%%\n", avgVolume))
+            val rmssdValues = ppgRecords.mapNotNull { it.rmssdMs }
+            if (rmssdValues.isNotEmpty()) {
+                sb.append(String.format(Locale.getDefault(), "Average HRV (RMSSD): %.0f ms (%d measurements)\n",
+                    rmssdValues.average(), rmssdValues.size))
+            }
+            appendBreathing(ppgRecords)
+            sb.append("\n")
         }
 
-        val vibeRecords = records.filter { it.type != "BLOOD_FLOW" }
+        val vibeRecords = records.filter { it.type == "VIBRATION" }
         if (vibeRecords.isNotEmpty()) {
             val avgVibe = vibeRecords.map { it.value }.average()
             val minVibe = vibeRecords.minOf { it.value }
             val maxVibe = vibeRecords.maxOf { it.value }
-            sb.append("--- VIBRATIONS THORACIQUES (SCG) ---\n")
-            sb.append("Mesures : ${vibeRecords.size}\n")
-            sb.append(String.format(Locale.getDefault(), "Vibration RMS moyenne : %.3f m/s² (Min: %.3f, Max: %.3f)\n\n", avgVibe, minVibe, maxVibe))
+            sb.append("--- CHEST VIBRATION (SCG) ---\n")
+            sb.append("Measurements: ${vibeRecords.size}\n")
+            sb.append(String.format(Locale.getDefault(), "Average RMS vibration: %.3f m/s² (Min: %.3f, Max: %.3f)\n", avgVibe, minVibe, maxVibe))
+            appendBreathing(vibeRecords)
+            sb.append("\n")
         }
 
-        sb.append("--- HISTORIQUE DÉTAILLÉ ---\n")
+        val tremorRecords = records.filter { it.type == "TREMOR" }
+        if (tremorRecords.isNotEmpty()) {
+            sb.append("--- HAND TREMOR ---\n")
+            sb.append("Measurements: ${tremorRecords.size}\n")
+            sb.append(String.format(Locale.getDefault(), "Average amplitude: %.3f m/s² | Average frequency: %.1f Hz\n\n",
+                tremorRecords.map { it.value }.average(), tremorRecords.map { it.secondaryValue }.average()))
+        }
+
+        sb.append("--- DETAILED HISTORY ---\n")
         records.forEachIndexed { index, record ->
             val dateStr = sdf.format(Date(record.timestamp))
-            val isPpg = record.type == "BLOOD_FLOW"
-            if (isPpg) {
-                sb.append(String.format(Locale.getDefault(), "[%d] %s | Pouls: %d BPM (Vol: %.1f%%) | État: %s\n",
-                    index + 1, dateStr, record.value.toInt(), record.secondaryValue, record.status))
-            } else {
-                sb.append(String.format(Locale.getDefault(), "[%d] %s | Vibration: %.3f m/s² | État: %s\n",
-                    index + 1, dateStr, record.value, record.status))
+            val breathText = record.respiratoryRate?.let { String.format(Locale.getDefault(), " | Breathing: %.0f /min", it) } ?: ""
+            when (record.type) {
+                "PPG" -> {
+                    val hrvText = record.rmssdMs?.let { String.format(Locale.getDefault(), " | HRV: %.0f ms", it) } ?: ""
+                    sb.append(String.format(Locale.getDefault(), "[%d] %s | Pulse: %d BPM (Vol: %.1f%%)%s%s | Status: %s\n",
+                        index + 1, dateStr, record.value.toInt(), record.secondaryValue, hrvText, breathText, record.status))
+                }
+                "TREMOR" -> sb.append(String.format(Locale.getDefault(), "[%d] %s | Tremor: %.3f m/s² at %.1f Hz\n",
+                    index + 1, dateStr, record.value, record.secondaryValue))
+                else -> sb.append(String.format(Locale.getDefault(), "[%d] %s | Vibration: %.3f m/s²%s | Status: %s\n",
+                    index + 1, dateStr, record.value, breathText, record.status))
             }
         }
         sb.append("========================================\n")
         return sb.toString()
+    }
+
+    companion object {
+        const val QUICK_DURATION_SEC = 10
+        const val LONG_DURATION_SEC = 60
+        const val TREMOR_DURATION_SEC = 15
+
+        /** Simulated data is a development aid; it is compiled out of store (release) builds. */
+        val SIMULATOR_ALLOWED: Boolean = BuildConfig.DEBUG
+        private const val KEY_DISCLAIMER_ACCEPTED = "disclaimer_accepted_v2" // v2: welcome notice gained privacy and free-app sections
     }
 
     override fun onCleared() {
@@ -613,5 +731,7 @@ class BiometricViewModel(application: Application) : AndroidViewModel(applicatio
         simulatedFingerJob = null
         stopSimulation()
         stopHardwareSensors()
+        stepCounterMonitor?.stop()
+        stepCounterMonitor = null
     }
 }

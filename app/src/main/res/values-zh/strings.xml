@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BioSense Log</string>
+    <string name="title_blood_flow">血流 (PPG)</string>
+    <string name="title_chest_vibe">胸部振动</string>
+    <string name="measurement_history">生物特征历史</string>
+    <string name="lbl_simulator">模拟器模式</string>
+    <string name="lbl_hardware">真实传感器</string>
+
+    <string name="btn_start">开始测量</string>
+    <string name="btn_stop">停止</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_clear_history">清除历史</string>
+
+    <string name="label_pulse">脉搏：%d BPM</string>
+    <string name="label_amplitude">振幅：%.1f%%</string>
+    <string name="label_vibration">振动：%.3f m/s²</string>
+
+    <string name="guide_finger_ppg">将食指指腹平放在后置摄像头镜头上，并盖住闪光灯。</string>
+    <string name="guide_vibe">请躺下，将手机平放在胸部中央。</string>
+    <string name="finger_not_detected">未检测到手指。请完全盖住摄像头镜头和闪光灯。</string>
+    <string name="finger_detected">已检测到手指！正在分析血流脉搏...</string>
+    <string name="finger_status_too_dark">太暗。请确认闪光灯已打开且手指盖住摄像头。</string>
+    <string name="finger_status_too_bright">太亮。请用指腹完全盖住镜头。</string>
+    <string name="finger_status_adjust">请用指腹完全盖住后置摄像头镜头和闪光灯。</string>
+    <string name="test_simulate_finger">模拟手指接触（测试）</string>
+
+    <string name="camera_permission_denied">使用光学血流传感器需要相机权限。</string>
+    <string name="btn_request_permission">授予相机权限</string>
+
+    <string name="status_low">偏低</string>
+    <string name="status_normal">正常</string>
+    <string name="status_high">偏高</string>
+
+    <string name="limit_pulse">脉搏（正常范围：60 - 100 BPM）</string>
+    <string name="limit_vibration">振动（正常范围：0.050 - 0.250 m/s²）</string>
+    <string name="limit_volume" formatted="false">灌注指数（正常范围：1.0% - 4.5%）</string>
+
+    <string name="empty_history">数据库中尚无测量记录。</string>
+    <string name="last_measurement">最近一次测量</string>
+    <string name="show_history">查看历史 (%d)</string>
+    <string name="hide_history">隐藏历史</string>
+    <string name="dialog_clear_history_title">清除历史？</string>
+    <string name="dialog_clear_history_message">已保存的 %d 条测量记录将被永久删除。</string>
+    <string name="toast_saved">测量已成功保存！</string>
+    <string name="info_countdown">校准中... 剩余 %d 秒</string>
+
+    <string name="tab_ppg">血流 (PPG)</string>
+    <string name="tab_vibe">胸部振动 (SCG)</string>
+    <string name="unit_bpm">BPM</string>
+
+    <string name="abnormal_test">模拟异常数值</string>
+    <string name="normal_test">恢复正常数值</string>
+
+    <string name="tip_title_finger_placement">如何放置手指？</string>
+    <string name="tip_camera_choice">1. 主摄像头：盖住后置主摄像头镜头（通常是最上方的镜头）。</string>
+    <string name="tip_flash_coverage">2. LED 闪光灯：闪光灯应照亮指腹，使毛细血管透出红光。</string>
+    <string name="tip_gentle_pressure">3. 轻轻按压：手指轻放即可。按压过重会阻断毛细血管血流。</string>
+    <string name="tip_keep_still">4. 保持静止：在测量结束前保持手指不动。</string>
+
+    <string name="btn_close_app">关闭应用</string>
+    <string name="dialog_close_title">关闭应用？</string>
+    <string name="dialog_close_message">确定要退出 BioSense Log 吗？</string>
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_confirm_exit">退出</string>
+
+    <string name="btn_export">导出</string>
+    <string name="dialog_export_title">导出测量数据</string>
+    <string name="export_format_csv">CSV（电子表格）</string>
+    <string name="export_format_report">摘要报告</string>
+    <string name="btn_share_export">分享</string>
+    <string name="btn_copy_export">复制</string>
+    <string name="toast_copied">已复制到剪贴板！</string>
+    <string name="export_chooser_title">导出 BioSense 数据</string>
+    <string name="export_record_count">%d 条测量 • BioSense Log</string>
+    <string name="label_hrv">心率变异性：%d ms</string>
+    <string name="trend_title">趋势</string>
+    <string name="range_7d">7 天</string>
+    <string name="range_30d">30 天</string>
+    <string name="range_all">全部</string>
+    <string name="metric_primary">脉搏</string>
+    <string name="metric_hrv">HRV</string>
+    <string name="trend_not_enough">在此期间至少保存 2 次测量即可查看趋势。</string>
+    <string name="trend_summary">最低 %1$s · 平均 %2$s · 最高 %3$s</string>
+    <string name="duration_quick">快速（%d 秒）</string>
+    <string name="duration_hrv">HRV（%d 秒）</string>
+    <string name="duration_hint">选择 60 秒以测量心率变异性和呼吸频率。</string>
+    <string name="title_tremor">手部震颤</string>
+    <string name="guide_tremor">请坐下，手持手机向前伸直手臂，尽量保持静止 %d 秒。</string>
+    <string name="tremor_info">仅供参考：手机测量的震颤没有经过验证的正常范围。</string>
+    <string name="label_breathing">呼吸：%d 次/分</string>
+    <string name="metric_breathing">呼吸</string>
+    <string name="duration_breathing">呼吸（%d 秒）</string>
+    <string name="duration_hint_breathing">选择 60 秒以测量呼吸频率。</string>
+    <string name="steps_today">今日步数</string>
+    <string name="btn_enable_steps">启用</string>
+    <string name="steps_unavailable">此设备没有计步器</string>
+    <string name="app_subtitle">生物分析</string>
+    <string name="label_ppg_analysis">PPG 分析</string>
+    <string name="label_scg">心震图 (SCG)</string>
+    <string name="label_rec">录制</string>
+    <string name="camera_active_flash">相机已启用 • 闪光灯开启</string>
+    <string name="optical_sensor_active">光学传感器已启用</string>
+    <string name="cd_delete_measurement">删除测量记录</string>
+    <string name="disclaimer_title">非医疗器械</string>
+    <string name="disclaimer_body">BioSense Log 是一款健康与自我记录应用。它不是医疗器械，不能诊断、治疗或预防任何疾病。\n\n手机传感器的精度低于医疗设备，所显示的参考范围仅供一般参考。\n\n请勿根据这些读数做出健康决定。如果您感到不适或担心自己的健康，请咨询医生。紧急情况下，请拨打当地急救电话。</string>
+    <string name="disclaimer_accept">我已了解</string>
+    <string name="disclaimer_footer">非医疗器械。仅用于健康与自我记录，不可用于诊断。</string>
+    <string name="welcome_title">开始之前</string>
+    <string name="privacy_title">您的数据只保存在手机上</string>
+    <string name="privacy_body">您的所有测量数据仅保存在本手机上。BioSense Log 不收集也不发送任何数据：本应用没有联网权限。只有当您自己选择导出或分享时，数据才会离开手机。</string>
+    <string name="free_title">完全免费</string>
+    <string name="free_body">BioSense Log 完全免费。如果您觉得它有用，欢迎在 Google Play 上为它评分并留下评论，让更多人发现它。</string>
+    <string name="btn_rate_app">为应用评分</string>
+    <string name="footer_privacy">您的数据只保存在手机上。不会收集或发送任何数据。</string>
+    <string name="language_title">语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="cd_change_language">更改语言</string>
+</resources>

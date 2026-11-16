@@ -1,0 +1,1 @@
+Puls, HRV, Atmung und Zittern mit dem Handy messen. Daten bleiben auf dem Gerät.

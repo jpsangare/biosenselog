@@ -11,7 +11,10 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview as CameraPreview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
 import androidx.compose.material.icons.automirrored.rounded.ExitToApp
+import androidx.compose.material.icons.rounded.PanTool
+import android.os.Build
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.animation.AnimatedVisibility
@@ -42,16 +45,20 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.Camera
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FlashlightOn
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LinearScale
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,17 +70,27 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.core.os.LocaleListCompat
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
@@ -98,6 +115,10 @@ fun BiometricDashboard(
     val isSimulatorEnabled by viewModel.isSimulatorEnabled.collectAsStateWithLifecycle()
     val isMeasuring by viewModel.isMeasuring.collectAsStateWithLifecycle()
     val countdown by viewModel.countdown.collectAsStateWithLifecycle()
+    val measurementDurationSec by viewModel.measurementDurationSec.collectAsStateWithLifecycle()
+    val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
+    val isDisclaimerAccepted by viewModel.isDisclaimerAccepted.collectAsStateWithLifecycle()
+    val measurementTotalSec by viewModel.measurementTotalSec.collectAsStateWithLifecycle()
 
     val liveBPM by viewModel.liveBPM.collectAsStateWithLifecycle()
     val liveBloodVolume by viewModel.liveBloodVolume.collectAsStateWithLifecycle()
@@ -115,6 +136,9 @@ fun BiometricDashboard(
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var exportFormatCsv by remember { mutableStateOf(true) }
+    var isHistoryExpanded by rememberSaveable { mutableStateOf(false) }
+    var showClearHistoryDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
     var activeCamera by remember { mutableStateOf<Camera?>(null) }
     var cameraProviderRef by remember { mutableStateOf<ProcessCameraProvider?>(null) }
 
@@ -173,7 +197,7 @@ fun BiometricDashboard(
                             letterSpacing = (-0.5).sp
                         )
                         Text(
-                            text = "BIO-ANALYTICS",
+                            text = stringResource(R.string.app_subtitle).uppercase(),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -185,17 +209,21 @@ fun BiometricDashboard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Quick locale info styled as elegant button
+                        // Language button: shows the current language, opens the language picker
+                        val changeLanguageLabel = stringResource(R.string.cd_change_language)
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(Color.White)
-                                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape),
+                                .background(MaterialTheme.colorScheme.surface)
+                                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape)
+                                .clickable(onClickLabel = changeLanguageLabel) { showLanguageDialog = true }
+                                .semantics { contentDescription = changeLanguageLabel }
+                                .testTag("language_btn"),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = Locale.getDefault().language.uppercase(),
+                                text = LocalConfiguration.current.locales[0].language.uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -219,22 +247,6 @@ fun BiometricDashboard(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
-
-                        // Avatar container
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Person,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
                     }
                 }
             }
@@ -243,6 +255,7 @@ fun BiometricDashboard(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .testTag("dashboard_list")
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -276,16 +289,18 @@ fun BiometricDashboard(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp),
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Analytics, contentDescription = null)
-                                Spacer(modifier = Modifier.width(6.dp))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Rounded.Analytics, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = stringResource(R.string.title_blood_flow),
                                     fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.labelMedium,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2
                                 )
                             }
                         }
@@ -305,16 +320,49 @@ fun BiometricDashboard(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp),
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Vibration, contentDescription = null)
-                                Spacer(modifier = Modifier.width(6.dp))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Rounded.Vibration, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = stringResource(R.string.title_chest_vibe),
                                     fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.labelMedium,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2
+                                )
+                            }
+                        }
+                    }
+
+                    Card(
+                        onClick = { viewModel.setTab("TREMOR") },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("tab_tremor"),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (currentTab == "TREMOR") activeColor else inactiveColor,
+                            contentColor = if (currentTab == "TREMOR") onActiveColor else onInactiveColor
+                        ),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Rounded.PanTool, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = stringResource(R.string.title_tremor),
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2
                                 )
                             }
                         }
@@ -322,8 +370,17 @@ fun BiometricDashboard(
                 }
             }
 
-            // Mode Selecor (Sensor vs Simulator)
+            // Today's steps
             item {
+                StepsCard(
+                    steps = todaySteps,
+                    isAvailable = viewModel.isStepCounterAvailable,
+                    onPermissionGranted = { viewModel.startStepCounter() }
+                )
+            }
+
+            // Sensor vs Simulator switch: developer builds only (store builds always use real sensors)
+            if (BiometricViewModel.SIMULATOR_ALLOWED) item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -428,14 +485,14 @@ fun BiometricDashboard(
                                 // Title Inside Live Card
                                 Column(modifier = Modifier.align(Alignment.TopStart)) {
                                     Text(
-                                        text = "VITALPULSE",
+                                        text = stringResource(R.string.app_name).uppercase(),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF2DD4BF), // SleekTealAccent
                                         letterSpacing = 1.sp
                                     )
                                     Text(
-                                        text = "PPG ANALYTICS",
+                                        text = stringResource(R.string.label_ppg_analysis).uppercase(),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Medium,
                                         color = Color.White.copy(alpha = 0.5f),
@@ -473,7 +530,7 @@ fun BiometricDashboard(
                                                 .background(Color.White)
                                         )
                                         Text(
-                                            text = "REC. LIVE",
+                                            text = stringResource(R.string.label_rec),
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Black,
                                             color = Color.White,
@@ -707,7 +764,7 @@ fun BiometricDashboard(
                                                         } catch (e: Exception) {
                                                             e.printStackTrace()
                                                         }
-                                                    }, ctx.mainExecutor)
+                                                    }, ContextCompat.getMainExecutor(ctx))
 
                                                     previewView
                                                 },
@@ -731,11 +788,12 @@ fun BiometricDashboard(
                                             verticalArrangement = Arrangement.Center
                                         ) {
                                             Text(
-                                                text = if (isFingerPresent) "Camera Active • Flash ON" else "Optical Sensor Active",
+                                                text = stringResource(if (isFingerPresent) R.string.camera_active_flash else R.string.optical_sensor_active),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
+                                            if (BiometricViewModel.SIMULATOR_ALLOWED) {
                                             Spacer(modifier = Modifier.height(4.dp))
                                             FilledTonalButton(
                                                 onClick = { viewModel.setSimulatedFingerTouch(!isSimulatedFingerTouch) },
@@ -774,6 +832,7 @@ fun BiometricDashboard(
                                                         modifier = Modifier.testTag("chip_115_bpm")
                                                     )
                                                 }
+                                            }
                                             }
                                         }
                                     }
@@ -885,7 +944,7 @@ fun BiometricDashboard(
                                     modifier = Modifier.padding(horizontal = 8.dp)
                                 )
                             }
-                        } else {
+                        } else if (currentTab == "VIBRATION") {
                             // CHEST VIBRATIONS (SCG) USER JOURNEY IN SLEEK INTERFACE THEME
                             Text(
                                 text = stringResource(R.string.title_chest_vibe).uppercase(),
@@ -909,14 +968,14 @@ fun BiometricDashboard(
                                 // Title Inside Live Card
                                 Column(modifier = Modifier.align(Alignment.TopStart)) {
                                     Text(
-                                        text = "VITALPULSE",
+                                        text = stringResource(R.string.app_name).uppercase(),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF2DD4BF), // SleekTealAccent
                                         letterSpacing = 1.sp
                                     )
                                     Text(
-                                        text = "MICRO-SEISMOGRAPHY (SCG)",
+                                        text = stringResource(R.string.label_scg).uppercase(),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Medium,
                                         color = Color.White.copy(alpha = 0.5f),
@@ -954,7 +1013,7 @@ fun BiometricDashboard(
                                                 .background(Color.White)
                                         )
                                         Text(
-                                            text = "REC. LIVE",
+                                            text = stringResource(R.string.label_rec),
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Black,
                                             color = Color.White,
@@ -1043,21 +1102,59 @@ fun BiometricDashboard(
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
+                        } else {
+                            TremorPanel(
+                                liveRms = liveVibeRMS,
+                                waveform = vibeWaveform,
+                                isMeasuring = isMeasuring
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Controls: Start, Stop, Save
-                        Row(
+                        if (currentTab != "TREMOR" && !isMeasuring) {
+                            val isPpgTab = currentTab == "PPG"
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                            ) {
+                                listOf(
+                                    BiometricViewModel.QUICK_DURATION_SEC to R.string.duration_quick,
+                                    BiometricViewModel.LONG_DURATION_SEC to
+                                        if (isPpgTab) R.string.duration_hrv else R.string.duration_breathing
+                                ).forEach { (seconds, label) ->
+                                    FilterChip(
+                                        selected = measurementDurationSec == seconds,
+                                        onClick = { viewModel.setMeasurementDuration(seconds) },
+                                        label = { Text(stringResource(label, seconds)) },
+                                        modifier = Modifier.testTag("duration_${seconds}s_chip")
+                                    )
+                                }
+                            }
+                            if (measurementDurationSec == BiometricViewModel.QUICK_DURATION_SEC) {
+                                Text(
+                                    text = stringResource(
+                                        if (isPpgTab) R.string.duration_hint else R.string.duration_hint_breathing
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
+                        // Controls: Start/Stop on its own full-width row (long labels in some languages), Save below
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             if (!isMeasuring) {
                                 Button(
                                     onClick = { viewModel.startMeasurementSecured() },
                                     modifier = Modifier
-                                        .weight(1.5f)
+                                        .fillMaxWidth()
                                         .height(54.dp)
                                         .testTag("start_measurement_btn"),
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -1068,14 +1165,16 @@ fun BiometricDashboard(
                                     Text(
                                         text = stringResource(R.string.btn_start),
                                         fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.titleMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             } else {
                                 Button(
                                     onClick = { viewModel.stopMeasurement() },
                                     modifier = Modifier
-                                        .weight(1.5f)
+                                        .fillMaxWidth()
                                         .height(54.dp)
                                         .testTag("stop_measurement_btn"),
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
@@ -1086,26 +1185,33 @@ fun BiometricDashboard(
                                     Text(
                                         text = "${stringResource(R.string.btn_stop)} (${countdown}s)",
                                         fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.titleMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
 
-                            // Direct quick-save
-                            Button(
-                                onClick = { viewModel.logCurrentReadingToDb() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(54.dp)
-                                    .testTag("save_now_btn"),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.btn_save),
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                            // Direct quick-save (tremor is only meaningful from a full recording)
+                            if (currentTab != "TREMOR") {
+                                OutlinedButton(
+                                    onClick = { viewModel.logCurrentReadingToDb() },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(48.dp)
+                                        .testTag("save_now_btn"),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.btn_save),
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
                         }
 
@@ -1116,7 +1222,7 @@ fun BiometricDashboard(
                                 modifier = Modifier.padding(top = 16.dp)
                             ) {
                                 LinearProgressIndicator(
-                                    progress = { (10f - countdown) / 10f },
+                                    progress = { (measurementTotalSec - countdown).toFloat() / measurementTotalSec },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(6.dp)
@@ -1186,16 +1292,6 @@ fun BiometricDashboard(
                                 )
                             }
 
-                            IconButton(
-                                onClick = { viewModel.clearLogHistory() },
-                                modifier = Modifier.testTag("clear_history_btn")
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Delete,
-                                    contentDescription = stringResource(R.string.btn_clear_history),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
                         }
                     }
                 }
@@ -1235,14 +1331,214 @@ fun BiometricDashboard(
                     }
                 }
             } else {
-                items(recentRecords, key = { it.id }) { record ->
-                    HistoryItemRow(
-                        record = record,
-                        onDeleteClick = { viewModel.deleteRecord(record) }
+                // Records are sorted newest first: always show the latest one.
+                val latestRecord = recentRecords.first()
+                val olderRecords = recentRecords.drop(1)
+
+                item(key = "trend_chart") {
+                    TrendChartCard(records = recentRecords, type = currentTab)
+                }
+
+                item {
+                    Text(
+                        text = stringResource(R.string.last_measurement),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+                item(key = latestRecord.id) {
+                    HistoryItemRow(
+                        record = latestRecord,
+                        onDeleteClick = { viewModel.deleteRecord(latestRecord) }
+                    )
+                }
+
+                if (olderRecords.isNotEmpty()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { isHistoryExpanded = !isHistoryExpanded }
+                                .padding(horizontal = 8.dp, vertical = 10.dp)
+                                .testTag("toggle_history_btn"),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (isHistoryExpanded) stringResource(R.string.hide_history)
+                                else stringResource(R.string.show_history, olderRecords.size),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Icon(
+                                imageVector = if (isHistoryExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    if (isHistoryExpanded) {
+                        items(olderRecords, key = { it.id }) { record ->
+                            HistoryItemRow(
+                                record = record,
+                                onDeleteClick = { viewModel.deleteRecord(record) }
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    OutlinedButton(
+                        onClick = { showClearHistoryDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("clear_history_btn"),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+                    ) {
+                        Icon(
+                            Icons.Rounded.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.btn_clear_history),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Footer: rate request, privacy statement and permanent medical disclaimer
+            item(key = "disclaimer_footer") {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = { openStoreListing(context) },
+                        modifier = Modifier.testTag("rate_app_btn")
+                    ) {
+                        Icon(Icons.Rounded.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(R.string.btn_rate_app), fontWeight = FontWeight.Bold)
+                    }
+                    listOf(R.string.footer_privacy, R.string.disclaimer_footer).forEach { res ->
+                        Text(
+                            text = stringResource(res),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        )
+                    }
                 }
             }
         }
+    }
+
+    // One-time welcome notice (privacy, free app, not a medical device); must be accepted.
+    if (!isDisclaimerAccepted) {
+        AlertDialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.welcome_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        R.string.privacy_title to R.string.privacy_body,
+                        R.string.free_title to R.string.free_body,
+                        R.string.disclaimer_title to R.string.disclaimer_body
+                    ).forEachIndexed { index, (heading, body) ->
+                        if (index > 0) Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(heading),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(text = stringResource(body), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.acceptDisclaimer() },
+                    modifier = Modifier.testTag("accept_disclaimer_btn")
+                ) {
+                    Text(text = stringResource(R.string.disclaimer_accept))
+                }
+            }
+        )
+    }
+
+    if (showLanguageDialog) {
+        LanguagePickerDialog(onDismiss = { showLanguageDialog = false })
+    }
+
+    if (showClearHistoryDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearHistoryDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Rounded.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.dialog_clear_history_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(text = stringResource(R.string.dialog_clear_history_message, recentRecords.size))
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showClearHistoryDialog = false
+                        isHistoryExpanded = false
+                        viewModel.clearLogHistory()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.testTag("confirm_clear_history_btn")
+                ) {
+                    Text(text = stringResource(R.string.btn_clear_history))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showClearHistoryDialog = false },
+                    modifier = Modifier.testTag("cancel_clear_history_btn")
+                ) {
+                    Text(text = stringResource(R.string.dialog_cancel))
+                }
+            }
+        )
     }
 
     if (showExitConfirmDialog) {
@@ -1342,7 +1638,9 @@ fun BiometricDashboard(
                                     fontWeight = if (exportFormatCsv) FontWeight.Bold else FontWeight.Normal
                                 )
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("export_format_csv_chip")
                         )
                         FilterChip(
                             selected = !exportFormatCsv,
@@ -1354,7 +1652,9 @@ fun BiometricDashboard(
                                     fontWeight = if (!exportFormatCsv) FontWeight.Bold else FontWeight.Normal
                                 )
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("export_format_report_chip")
                         )
                     }
 
@@ -1378,6 +1678,7 @@ fun BiometricDashboard(
                             ) {
                                 Text(
                                     text = exportText,
+                                    modifier = Modifier.testTag("export_preview"),
                                     fontFamily = FontFamily.Monospace,
                                     fontSize = 11.sp,
                                     lineHeight = 15.sp,
@@ -1388,7 +1689,7 @@ fun BiometricDashboard(
                     }
 
                     Text(
-                        text = "${recentRecords.size} mesures • BioSense Log",
+                        text = stringResource(R.string.export_record_count, recentRecords.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1603,7 +1904,6 @@ fun HistoryItemRow(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isPpg = record.type == "PPG"
     val dateString = remember(record.timestamp) {
         val format = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         format.format(Date(record.timestamp))
@@ -1635,14 +1935,24 @@ fun HistoryItemRow(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = if (isPpg) Icons.Rounded.Analytics else Icons.Rounded.Vibration,
+                        imageVector = when (record.type) {
+                            "PPG" -> Icons.Rounded.Analytics
+                            "TREMOR" -> Icons.Rounded.PanTool
+                            else -> Icons.Rounded.Vibration
+                        },
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isPpg) stringResource(R.string.title_blood_flow) else stringResource(R.string.title_chest_vibe),
+                        text = stringResource(
+                            when (record.type) {
+                                "PPG" -> R.string.title_blood_flow
+                                "TREMOR" -> R.string.title_tremor
+                                else -> R.string.title_chest_vibe
+                            }
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -1652,17 +1962,18 @@ fun HistoryItemRow(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = if (isPpg) {
-                            "${record.value.toInt()} BPM (${String.format(Locale.getDefault(), "%.1f%%", record.secondaryValue)})"
-                        } else {
-                            String.format(Locale.getDefault(), "%.3f m/s²", record.value)
+                        text = when (record.type) {
+                            "PPG" -> "${record.value.toInt()} BPM (${String.format(Locale.getDefault(), "%.1f%%", record.secondaryValue)})"
+                            "TREMOR" -> String.format(Locale.getDefault(), "%.3f m/s² · %.1f Hz", record.value, record.secondaryValue)
+                            else -> String.format(Locale.getDefault(), "%.3f m/s²", record.value)
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Card(
+                    // "INFO" records (tremor) have no reference range, so no status badge.
+                    if (record.status != "INFO") Card(
                         colors = CardDefaults.cardColors(containerColor = statusColor.copy(alpha = 0.15f)),
                         shape = RoundedCornerShape(6.dp)
                     ) {
@@ -1680,6 +1991,26 @@ fun HistoryItemRow(
                     }
                 }
 
+                record.rmssdMs?.let { rmssd ->
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.label_hrv, kotlin.math.round(rmssd).toInt()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+
+                record.respiratoryRate?.let { rate ->
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.label_breathing, kotlin.math.round(rate).toInt()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
@@ -1695,10 +2026,421 @@ fun HistoryItemRow(
             ) {
                 Icon(
                     Icons.Rounded.Delete,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.cd_delete_measurement),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             }
         }
     }
+}
+
+private enum class TrendRange(val days: Int?, val labelRes: Int) {
+    WEEK(7, R.string.range_7d),
+    MONTH(30, R.string.range_30d),
+    ALL(null, R.string.range_all)
+}
+
+private enum class TrendMetric { PRIMARY, HRV, BREATHING }
+
+/** Metrics that can be charted for a sensor type; the first is its main value. */
+private fun trendMetricsFor(type: String): List<TrendMetric> = when (type) {
+    "PPG" -> listOf(TrendMetric.PRIMARY, TrendMetric.HRV, TrendMetric.BREATHING)
+    "VIBRATION" -> listOf(TrendMetric.PRIMARY, TrendMetric.BREATHING)
+    else -> listOf(TrendMetric.PRIMARY)
+}
+
+/**
+ * Line chart of saved measurements over time for one sensor [type] ("PPG", "VIBRATION" or "TREMOR").
+ * Where available, the user can switch to heart rate variability or breathing rate.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun TrendChartCard(
+    records: List<BiometricRecord>,
+    type: String,
+    modifier: Modifier = Modifier
+) {
+    val isPpg = type == "PPG"
+    val metrics = trendMetricsFor(type)
+    var range by rememberSaveable { mutableStateOf(TrendRange.WEEK) }
+    var metric by rememberSaveable { mutableStateOf(TrendMetric.PRIMARY) }
+    val activeMetric = if (metric in metrics) metric else TrendMetric.PRIMARY
+
+    // Chronological (timestamp, value) points for the selection.
+    val points = remember(records, type, range, activeMetric) {
+        val cutoff = range.days?.let { System.currentTimeMillis() - it * 24L * 3600_000L } ?: Long.MIN_VALUE
+        records
+            .filter { it.type == type && it.timestamp >= cutoff }
+            .mapNotNull { r ->
+                val v = when (activeMetric) {
+                    TrendMetric.HRV -> r.rmssdMs
+                    TrendMetric.BREATHING -> r.respiratoryRate
+                    TrendMetric.PRIMARY -> r.value
+                }
+                v?.let { r.timestamp to it }
+            }
+            .sortedBy { it.first }
+    }
+
+    fun format(v: Double): String = when {
+        activeMetric == TrendMetric.HRV -> "${kotlin.math.round(v).toInt()} ms"
+        activeMetric == TrendMetric.BREATHING -> "${kotlin.math.round(v).toInt()} /min"
+        isPpg -> "${kotlin.math.round(v).toInt()} BPM"
+        else -> String.format(Locale.getDefault(), "%.3f m/s²", v)
+    }
+
+    @Composable
+    fun label(m: TrendMetric): String = when (m) {
+        TrendMetric.HRV -> stringResource(R.string.metric_hrv)
+        TrendMetric.BREATHING -> stringResource(R.string.metric_breathing)
+        TrendMetric.PRIMARY -> stringResource(if (isPpg) R.string.metric_primary else R.string.title_chest_vibe)
+    }
+
+    val lineColor = when (activeMetric) {
+        TrendMetric.HRV -> MaterialTheme.colorScheme.tertiary
+        TrendMetric.BREATHING -> MaterialTheme.colorScheme.secondary
+        TrendMetric.PRIMARY -> MaterialTheme.colorScheme.primary
+    }
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("trend_chart_card"),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.trend_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                TrendRange.entries.forEach { r ->
+                    FilterChip(
+                        selected = range == r,
+                        onClick = { range = r },
+                        label = { Text(stringResource(r.labelRes)) }
+                    )
+                }
+                if (metrics.size > 1) {
+                    metrics.forEach { m ->
+                        FilterChip(
+                            selected = activeMetric == m,
+                            onClick = { metric = m },
+                            label = { Text(label(m)) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (points.size < 2) {
+                Text(
+                    text = stringResource(R.string.trend_not_enough),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 24.dp)
+                )
+            } else {
+                val values = points.map { it.second }
+                val minV = values.min()
+                val maxV = values.max()
+                val summary = stringResource(
+                    R.string.trend_summary,
+                    format(minV), format(values.average()), format(maxV)
+                )
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.height(140.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(format(maxV), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(format(minV), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Canvas(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(140.dp)
+                            .semantics { contentDescription = summary }
+                    ) {
+                        val t0 = points.first().first
+                        val tSpan = (points.last().first - t0).coerceAtLeast(1L).toFloat()
+                        val vSpan = (maxV - minV).takeIf { it > 0.0 } ?: 1.0
+                        val pad = 6.dp.toPx()
+                        val h = size.height - 2 * pad
+                        fun x(t: Long) = (t - t0) / tSpan * size.width
+                        fun y(v: Double) = if (maxV == minV) size.height / 2
+                        else pad + h - ((v - minV) / vSpan * h).toFloat()
+
+                        listOf(pad, size.height / 2, size.height - pad).forEach { gy ->
+                            drawLine(gridColor, Offset(0f, gy), Offset(size.width, gy), strokeWidth = 1.dp.toPx())
+                        }
+
+                        val path = Path()
+                        points.forEachIndexed { i, (t, v) ->
+                            if (i == 0) path.moveTo(x(t), y(v)) else path.lineTo(x(t), y(v))
+                        }
+                        drawPath(path, lineColor, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
+                        points.forEach { (t, v) ->
+                            drawCircle(lineColor, radius = 3.5.dp.toPx(), center = Offset(x(t), y(v)))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/** Tremor tab: live hand movement while the phone is held at arm's length. */
+@Composable
+fun TremorPanel(
+    liveRms: Double,
+    waveform: List<Float>,
+    isMeasuring: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = stringResource(R.string.title_tremor).uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.5.sp,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(4f / 3f)
+                .clip(RoundedCornerShape(32.dp))
+                .background(Color(0xFF0F292F))
+                .border(4.dp, Color.White, RoundedCornerShape(32.dp))
+                .padding(20.dp)
+        ) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = String.format(Locale.getDefault(), "%.3f", liveRms),
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 58.sp),
+                    fontWeight = FontWeight.Light,
+                    color = Color.White
+                )
+                Text(
+                    text = "m/s² RMS",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2DD4BF)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(75.dp)
+            ) {
+                CardWaveformPlot(
+                    waveform = waveform,
+                    color = Color(0xFF2DD4BF),
+                    containerColor = Color.Transparent,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "✋ " + stringResource(R.string.guide_tremor, BiometricViewModel.TREMOR_DURATION_SEC),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+        if (!isMeasuring) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.tremor_info),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+    }
+}
+
+/** Today's step count; asks for the activity permission where Android requires it (10+). */
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun StepsCard(
+    steps: Long?,
+    isAvailable: Boolean,
+    onPermissionGranted: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val permission = rememberPermissionState(Manifest.permission.ACTIVITY_RECOGNITION)
+        if (!permission.status.isGranted && isAvailable) {
+            StepsCardLayout(modifier, value = null) {
+                FilledTonalButton(
+                    onClick = { permission.launchPermissionRequest() },
+                    modifier = Modifier.testTag("enable_steps_btn")
+                ) { Text(stringResource(R.string.btn_enable_steps)) }
+            }
+            return
+        }
+        permission.status.isGranted
+    } else true
+
+    if (!isAvailable) {
+        StepsCardLayout(modifier, value = stringResource(R.string.steps_unavailable))
+        return
+    }
+    LaunchedEffect(granted) { if (granted) onPermissionGranted() }
+    StepsCardLayout(
+        modifier,
+        value = steps?.let { java.text.NumberFormat.getIntegerInstance().format(it) } ?: "—"
+    )
+}
+
+@Composable
+private fun StepsCardLayout(
+    modifier: Modifier,
+    value: String?,
+    action: @Composable () -> Unit = {}
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("steps_card"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.AutoMirrored.Rounded.DirectionsWalk,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.steps_today),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (value != null) {
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            action()
+        }
+    }
+}
+
+/** Opens this app's Google Play page (Play Store app if installed, otherwise the website). */
+private fun openStoreListing(context: android.content.Context) {
+    val id = context.packageName
+    val market = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$id"))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    try {
+        context.startActivity(market)
+    } catch (e: android.content.ActivityNotFoundException) {
+        context.startActivity(
+            Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://play.google.com/store/apps/details?id=$id"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }
+}
+
+/**
+ * Languages the app is translated into, each written in its own language so users can always
+ * find theirs. Must match the values-xx resource folders.
+ */
+private val APP_LANGUAGES = listOf(
+    "en" to "English",
+    "fr" to "Français",
+    "es" to "Español",
+    "de" to "Deutsch",
+    "pt" to "Português",
+    "zh" to "中文（简体）",
+    "ar" to "العربية",
+    "hi" to "हिन्दी"
+)
+
+/**
+ * In-app language picker. Uses Android's per-app language setting: remembered across restarts,
+ * shown in Android 13+ system settings, and "System default" follows the phone's language.
+ */
+@Composable
+fun LanguagePickerDialog(onDismiss: () -> Unit) {
+    // Empty tag = no app-specific language, i.e. follow the phone.
+    val current = AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore('-')
+    val options = listOf("" to stringResource(R.string.language_system)) + APP_LANGUAGES
+
+    fun choose(tag: String) {
+        onDismiss()
+        // Recreates the screen in the new language; the choice is saved by Android / AppCompat.
+        AppCompatDelegate.setApplicationLocales(
+            if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.language_title), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                options.forEach { (tag, name) ->
+                    val selected = tag == current
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .selectable(selected = selected, role = Role.RadioButton) { choose(tag) }
+                            .padding(horizontal = 8.dp, vertical = 10.dp)
+                            .testTag("language_option_${tag.ifEmpty { "system" }}"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = selected, onClick = null)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = name, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(text = stringResource(R.string.dialog_cancel)) }
+        }
+    )
 }
